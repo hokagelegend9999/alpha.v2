@@ -9,13 +9,13 @@ NC='\e[0m'
 apt update && apt upgrade
 apt install python3 python3-pip git
 cd /usr/bin
-wget https://github.com/rasi1982/alpha/raw/refs/heads/main/bot/bot.zip
+wget https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/bot/bot.zip
 unzip bot.zip
 mv bot/* /usr/bin
 chmod +x /usr/bin/*
 rm -rf bot.zip
 clear
-wget https://github.com/rasi1982/alpha/raw/refs/heads/main/bot/kyt.zip
+wget https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/bot/kyt.zip
 unzip kyt.zip
 pip3 install -r kyt/requirements.txt
 
