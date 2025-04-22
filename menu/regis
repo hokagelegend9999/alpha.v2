@@ -1,0 +1,27 @@
+#!/bin/bash
+data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
+date_list=$(date +"%Y-%m-%d" -d "$data_server")
+#########################
+[[ ! -f /usr/bin/git ]] && apt install git -y &> /dev/null
+# COLOR VALIDATION
+clear
+y='\033[1;93m'
+c="\033[0;36m"
+g="\e[92;1m"
+r="\033[1;31m"
+NC='\e[0m'
+gray="\e[1;30m"
+Blue="\033[1;36m"
+GREEN='\033[0;32m'
+grenbo="\033[1;95m"
+yell='\e[33m'
+BGX="\033[42m"
+END='\e[0m'
+bc="\e[5;36m"
+ungu='\033[0;35m'
+Green_background="\033[42;37m"
+Red_background="\033[41;37m"
+Suffix="\033[0m"
+NC='\e[0m'
+
+echo -e " ${GREEN} AWOAMWOKAOWKAOWKAOWK 😂🗿 ${NC}"

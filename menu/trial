@@ -1,0 +1,181 @@
+#!/bin/bash
+ISP=$(cat /etc/xray/isp)
+CITY=$(cat /etc/xray/city)
+domain=$(cat /etc/xray/domain)
+
+ungu="\033[0;35m"
+bc="\033[5;36m"
+y="\033[0;33m"
+NC="\033[0m"
+
+# // Izin IP
+url_izin="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+ipsaya=$(curl -sS ipv4.icanhazip.com)
+data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
+date_list=$(date +"%Y-%m-%d" -d "$data_server")
+checking_sc() {
+  useexp=$(wget -qO- $url_izin | grep $ipsaya | awk '{print $3}')
+  if [[ $date_list < $useexp ]]; then
+    echo -ne
+  else
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo -e "\033[42m          404 NOT FOUND AUTOSCRIPT          \033[0m"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo -e ""
+    echo -e "            ${RED}PERMISSION DENIED !${NC}"
+    echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
+    echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
+    echo -e "             \033[0;33mContact Admin :${NC}"
+    echo -e "      \033[0;36mTelegram${NC} FRosi_46"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    exit
+  fi
+}
+checking_sc
+
+function garis() {
+echo -e "${y} ────────────────────────────────────────────${NC}"
+}
+
+function Credit_Sc() {
+sleep 1
+echo -e ""
+garis 
+echo -e "${ungu}      Terimakasih sudah menggunakan-"
+echo -e "        Script premium by Rosi Center"
+garis
+echo -e ""
+exit 0
+}
+
+function LOGO() {
+clear
+echo -e ""
+garis
+echo -e "${ungu}            Rosi Store TUNNELING            "
+garis
+echo -e ""
+}
+
+clear
+garis
+echo -e "${ungu}         CREATE SSH/OVPN ACCOUNT         ${NC}"
+garis
+echo -e "${ungu} Input Number for expired${NC}"
+echo -e ""
+echo -e "${ungu} Example: 1 for 1 minutes${NC}"
+echo -e ""
+read -p " Sett Expired [minutes]: " timer
+
+user=Trial`</dev/urandom tr -dc 0-9 | head -c5`
+masaaktif=1
+Pass=1
+
+tgl=$(date -d "$masaaktif days" +"%d")
+bln=$(date -d "$masaaktif days" +"%b")
+thn=$(date -d "$masaaktif days" +"%Y")
+expe="$tgl $bln, $thn"
+tgl2=$(date +"%d")
+bln2=$(date +"%b")
+thn2=$(date +"%Y")
+tnggl="$tgl2 $bln2, $thn2"
+useradd -e `date -d "$masaaktif days" +"%Y-%m-%d"` -s /bin/false -M $user
+expi="$(chage -l $user | grep "Account expires" | awk -F": " '{print $2}')"
+echo -e "$Pass\n$Pass\n"|passwd $user &> /dev/null
+hariini=`date -d "0 days" +"%Y-%m-%d"`
+expi=`date -d "$masaaktif days" +"%Y-%m-%d"`
+
+DATADB=$(cat /etc/ssh/.ssh.db | grep "^#ssh#" | grep -w "${user}" | awk '{print $2}')
+if [[ "${DATADB}" != '' ]]; then
+  sed -i "/\b${user}\b/d" /etc/ssh/.ssh.db
+fi
+echo "#ssh# ${user} ${Pass} ${expe}" >>/etc/ssh/.ssh.db
+clear
+
+cat > /var/www/html/ssh-$user.txt <<-END
+───────────────────
+Format SSH OVPN Account
+───────────────────
+Username         : $user
+Password         : $Pass
+───────────────────
+IP               : $IP
+Host             : $domain
+Port OpenSSH     : 22
+Port Dropbear    : 143, 109
+Port Dropbear WS : 443, 109
+Port SSH UDP     : 1-65535
+Port SSL/TLS     : 400-900
+Port OVPN WS SSL : 443
+Port OVPN SSL    : 443
+Port OVPN TCP    : 1194
+Port OVPN UDP    : 2200
+BadVPN UDP       : 7100, 7300, 7300
+Port SSH WS      : 80, 8080, 8880, 2052, 2082, 2086
+Port SSH WS SSL  : 443, 8443, 2053, 2083
+───────────────────
+Active During    : $masaaktif Hari
+Created          : $tnggl
+Expired          : $expe
+───────────────────
+Payload Websocket NTLS: 
+GET / HTTP/1.1[crlf]Host: $domain[crlf]Upgrade: websocket[crlf][crlf]
+───────────────────
+Payload Websocket TLS: 
+GET wss://bug.com/ HTTP/1.1[crlf]Host: $domain[crlf]Upgrade: websocket[crlf][crlf]
+───────────────────
+Payload Enhanced:
+PATCH / HTTP/1.1[crlf]Host: [host][crlf]Host: bug.com[crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]
+───────────────────
+OVPN Download : https://$domain:81/
+───────────────────
+
+END
+
+cat> /etc/cron.d/trialssh-${user} << END
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/${timer} * * * * root /usr/local/sbin/z9dtrial ssh ${user} ${timer}
+END
+
+echo -e " Creating user...."
+echo -ne "Please wait... "
+load
+
+clear
+garis
+echo -e " ${ungu}           SSH/OVPN ACCOUNT             ${NC}"
+garis
+echo -e " Username         : $user "
+echo -e " Password         : $Pass "
+garis
+echo -e " Host/IP          : $domain"
+echo -e " Port OpenSSH     : 22"
+echo -e " Port SSH UDP     : 1-65535"
+echo -e " Port Dropbear    : 143, 109"
+echo -e " Port SSL/TLS     : 443"
+echo -e " Port OVPN WS SSL : 443"
+echo -e " Port OVPN SSL    : 443"
+echo -e " Port OVPN TCP    : 443, 1194"
+echo -e " Port OVPN UDP    : 2200"
+echo -e " BadVPN           : 7100 - 7500"
+echo -e " Port SSH NTLS    : 80, 8080, 8880, 2052, 2082"
+echo -e " Port SSH TLS     : 443, 8443, 2053"
+garis
+echo -e " OVPN Download    : https://$domain:81/"
+garis
+echo -e " Save Link Account: https://$domain:81/ssh-$user.txt"
+garis
+echo -e " Payload WS NTLS  :"
+echo -e " GET / HTTP/1.1[crlf]host: ${domain}[crlf]Upgrade: Websocket[crlf][crlf]"
+garis
+echo -e " Payload WS TLS   :"
+echo -e " GET http://bug.con/ HTTP/1.1[crlf]host: ${domain}[crlf]Upgrade: Websocket[crlf][crlf]"
+garis
+echo -e " Payload ENHANCED :"
+echo -e " PATCH / HTTP/1.1[crlf]Host: ${domain}[crlf]Host: bug.com[crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]" 
+garis
+#echo -e " Created On       : $hariini"
+echo -e " Expired On       : $timer Minutes"
+garis
+Credit_Sc

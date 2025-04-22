@@ -1,0 +1,294 @@
+#!/bin/bash
+# COLOR VALIDATION
+clear
+y='\033[1;33m' #yellow
+BGX="\033[42m"
+CYAN="\033[96m"
+z="\033[96m"
+f="\033[1;97;41m"
+RED='\033[0;31m'
+NC='\033[0m'
+gray="\e[1;30m"
+Blue="\033[0;34m"
+green='\033[0;32m'
+grenbo="\e[92;1m"
+purple="\033[1;95m"
+YELL='\033[0;33m'
+#INTALLER-UDP
+UDPX="https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1S3IE25v_fyUfCLslnujFBSBMNunDHDk2' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1S3IE25v_fyUfCLslnujFBSBMNunDHDk2"
+ISP=$(cat /root/.info/.isp)
+CITY=$(cat /root/.info/.city)
+IPVPS=$(curl -s ipv4.icanhazip.com)
+NS=$(cat /etc/xray/dns)
+domain=$(cat /etc/xray/domain)
+RAM=$(free -m | awk 'NR==2 {print $2}')
+USAGERAM=$(free -m | awk 'NR==2 {print $3}')
+MEMOFREE=$(printf '%-1s' "$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')")
+LOADCPU=$(printf '%-0.00001s' "$(top -bn1 | awk '/Cpu/ { cpu = "" 100 - $8 "%" }; END { print cpu }')")
+MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
+CORE=$(printf '%-1s' "$(grep -c cpu[0-9] /proc/stat)")
+DATEVPS=$(date +'%d-%m-%Y')
+TIMEZONE=$(printf '%(%H-%M-%S)T')
+SERONLINE=$(uptime -p | cut -d " " -f 2-10000)
+clear
+MYIP=$(curl -sS ipv4.icanhazip.com)
+echo ""
+izinsc="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+# USERNAME
+rm -f /usr/bin/user
+username=$(curl ${izinsc} | grep $MYIP | awk '{print $2}')
+echo "$username" >/usr/bin/user
+# validity
+rm -f /usr/bin/e
+valid=$(curl ${izinsc} | grep $MYIP | awk '{print $3}')
+echo "$valid" >/usr/bin/e
+# DETAIL ORDER
+username=$(cat /usr/bin/user)
+oid=$(cat /usr/bin/ver)
+exp=$(cat /usr/bin/e)
+clear
+# CERTIFICATE STATUS
+d1=$(date -d "$valid" +%s)
+d2=$(date -d "$today" +%s)
+certifacate=$(((d1 - d2) / 86400))
+# VPS Information
+DATE=$(date +'%Y-%m-%d')
+datediff() {
+    d1=$(date -d "$1" +%s)
+    d2=$(date -d "$2" +%s)
+    echo -e "$COLOR1 $NC Expiry In   : $(( (d1 - d2) / 86400 )) Days"
+}
+mai="datediff "$Exp" "$DATE""
+
+# Status Expired Or Active
+Info="(${green}Active${NC})"
+Error="(${RED}Expired${NC})"
+today=`date -d "0 days" +"%Y-%m-%d"`
+Exp1=$(curl ${izinsc} | grep $MYIP | awk '{print $3}')
+if [[ $today < $Exp1 ]]; then
+sts="${Info}"
+else
+sts="${Error}"
+fi
+clear
+
+# OS Uptime
+uptime="$(uptime -p | cut -d " " -f 2-10)"
+
+# Getting CPU Information
+cpu_usage1="$(ps aux | awk 'BEGIN {sum=0} {sum+=$3}; END {print sum}')"
+cpu_usage="$((${cpu_usage1/\.*} / ${coREDiilik:-1}))"
+cpu_usage+=" %"
+
+WKT=$(curl -s ipinfo.io/timezone )
+DAY=$(date +%A)
+DATE=$(date +%m/%d/%Y)
+DATE2=$(date -R | cut -d " " -f -5)
+IPVPS=$(curl -s ipv4.icanhazip.com)
+cname=$( awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo )
+cores=$( awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo )
+freq=$( awk -F: ' /cpu MHz/ {freq=$2} END {print freq}' /proc/cpuinfo )
+tram=$( free -m | awk 'NR==2 {print $2}' )
+uram=$( free -m | awk 'NR==2 {print $3}' )
+fram=$( free -m | awk 'NR==2 {print $4}' )
+clear
+ssh_service=$(/etc/init.d/ssh status | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+dropbear_service=$(/etc/init.d/dropbear status | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+haproxy_service=$(systemctl status haproxy | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+xray_service=$(systemctl status xray | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+nginx_service=$(systemctl status nginx | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+#Status | Geo Project
+clear
+
+#####INFOAKUN
+vlx=$(grep -c -E "^#& " "/etc/xray/config.json")
+let vla=$vlx/2
+vmc=$(grep -c -E "^### " "/etc/xray/config.json")
+let vma=$vmc/2
+ssh1="$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l)"
+trx=$(grep -c -E "^#! " "/etc/xray/config.json")
+let trb=$trx/2
+ssx=$(grep -c -E "^#ss# " "/etc/xray/config.json")
+let ssa=$ssx/2
+###########
+KANAN="\033[1;32m<\033[1;33m<\033[1;31m<\033[1;31m$NC"
+KIRI="\033[1;32m>\033[1;33m>\033[1;31m>\033[1;31m$NC"
+########
+r="\033[1;31m"  #REDTERANG
+a=" ${CYAN}ACCOUNT PREMIUM" 
+#clear
+clear
+
+echo -e " "
+echo -e "   ${Blue}╭════════════════════════════════════════════╮${NC}"
+echo -e "   ${Blue}│$NC${f}     Welcome To ROSI VPN AUTOSCRIPT PREMIUM       $NC${Blue}│$NC"
+echo -e "   ${Blue}╰════════════════════════════════════════════╯${NC}"
+echo -e " ${YELL}╭══════════════════════════════════════════════════╮${NC}"
+echo -e "   ${z}$NC [${f}01${NC}]$grenbo MENU TRIAL$NC       ${z}   $NC [${f}08${NC}]$purple BACKUP/ RESTORE "    
+echo -e "   ${z}$NC [${f}02${NC}]$grenbo MENU DELL USER EXP$NC ${z}$NC  [${f}09${NC}]$purple RENNEW DOMAIN$NC" 
+echo -e "   ${z}$NC [${f}03${NC}]$grenbo MENU AUTO REBOOT$NC  ${z} $NC  [${f}10${NC}]$purple RUNNING$NC" 
+echo -e "   ${z}$NC [${f}04${NC}]$grenbo MENU RESTART SERVICE$NC${z}$NC [${f}11${NC}]$purple REGIST IP$NC"
+echo -e "   ${z}$NC [${f}05${NC}]$grenbo MENU BOT TELEGRAM$NC ${z} $NC  [${f}12${NC}]$purple UPDATE SCRIPT$NC"
+echo -e "   ${z}$NC [${f}06${NC}]$grenbo CHANGE BANNER$NC    ${z} $NC   [${f}13${NC}]$purple FIX CERT SSL$NC"
+echo -e "   ${z}$NC [${f}07${NC}]$grenbo INFO PORT$NC         ${z} $NC  [${f}14${NC}]$purple INSTALL UDP$NC"
+echo -e " ${YELL}╰══════════════════════════════════════════════════╯${NC}"
+echo -e "   ${y} ════════════════════════════════════════════"
+echo -e "   ${r} PILIH MENU DENGAN CARA KETIK 1/14 LALU ENTER $NC"
+echo -e "   ${y} ════════════════════════════════════════════"
+echo -e "   ${Blue}╭═══════════════════════════════════════${NC}"
+echo -e "   ${Blue}│$NC${f} Developer$NC  ${z}=$NC ROSI STORE"
+echo -e "   ${Blue}│$NC${f} Telegram$NC   ${z}=$NC @FRosi_46"
+echo -e "   ${Blue}│$NC${f} IP ADDRESS$NC ${z}=$NC $IPVPS${NC}"
+echo -e "   ${Blue}│$NC${f} User$NC       ${z}=$NC $username"
+echo -e "   ${Blue}│$NC${f} Exp Script$NC ${z}=$NC $exp $certifacate Days$NC $sts"
+echo -e "   ${Blue}╰═══════════════════════════════════════${NC}"
+echo -e "     ${f}THANKS YOU FOR USING SCRIPT ROSI STORE $NC"
+echo -e ""
+read -p " PILIH OPSI MENU [ 1-14 atau x] ➤ : " opt
+echo -e ""
+case $opt in
+1 | 01)
+clear
+m-trial
+;;
+2 | 02)
+clear
+xp
+echo ""
+echo -e " ${GREEN} Back to menu in 1 sec ${NC}"
+sleep 1
+menu-x
+;;
+3 | 03)
+clear
+autoreboot
+;;
+4 | 04)
+clear
+restart
+reboot
+;;
+5 | 05)
+clear
+m-bot
+;;
+6 | 06)
+clear
+echo -e "Edit Banner SSH Message " | lolcat
+sleep 2
+echo -e "Loading..........⏳" | lolcat
+sleep 5
+nano /etc/kyt.txt
+clear
+echo -e "${green}ANDA YAKIN UNTUK MEMASANG BANNER INI ? $NC"
+echo -e ""
+read -p "SILAHKAN PILIH OPSI BERIKUT [Y/N]:" arg
+if [[ $arg == 'Y' ]]; then
+  echo -e "${Blue}Tindakan Diteruskan! $NC"
+  echo -e "${green}START. . . $NC"
+elif [[ $arg == 'y' ]]; then
+  echo -e "${Blue}Tindakan Diteruskan! $NC"
+  clear
+  echo -e "${Blue}START . . .$NC"
+elif [[ $arg == 'N' ]]; then
+  echo -e "${RED}Tindakan Dihentikan! $NC"
+  sleep 1
+  clear
+  menu
+  exit 0
+elif [[ $arg == 'n' ]]; then
+  echo -e "${RED}Tindakan Dihentikan! $NC"
+  sleep 1
+  clear
+  rm -f /root/update.sh
+  exit 0
+else
+  echo -e "${RED}Argumen Tidak Diketahui! $NC"
+  sleep 1
+  clear
+  rm -f /root/update.sh
+  exit 0
+fi
+##########
+clear
+reboot
+;;
+7 | 07)
+clear
+prot
+;;
+8 | 08)
+clear
+menu-backup
+;;
+9 | 09)
+clear
+addhost
+;;
+10)
+clear
+run
+;;
+11)
+clear
+kontol
+;;
+12)
+clear
+wget -q https://github.com/rasi1982/alpha/raw/refs/heads/main/update.sh
+chmod +x update.sh
+./update.sh
+;;
+13)
+clear
+fixcert
+;;
+14)
+clear
+echo -e "${green}ANDA YAKIN UNTUK MEMASANG SCRIPT INI ? $NC"
+echo -e "${green}MINIMAL RAM 2 GB BIAR DISK TIDAK FULL $NC"
+echo -e "${green}OS SUPPORT UBUNTU 20.04 ONLY $NC"
+echo -e ""
+read -p "SUDAH LAPOR KE ADMIN ? [Y/N]:" arg
+if [[ $arg == 'Y' ]]; then
+  echo -e "${Blue}Tindakan Diteruskan! $NC"
+  echo -e "${green}START. . . $NC"
+elif [[ $arg == 'y' ]]; then
+  echo -e "${Blue}Tindakan Diteruskan! $NC"
+  clear
+  echo -e "${Blue}START . . .$NC"
+elif [[ $arg == 'N' ]]; then
+  echo -e "${RED}Tindakan Dihentikan! $NC"
+  sleep 1
+  clear
+  menu
+  exit 0
+elif [[ $arg == 'n' ]]; then
+  echo -e "${RED}Tindakan Dihentikan! $NC"
+  sleep 1
+  clear
+  rm -f /root/update.sh
+  exit 0
+else
+  echo -e "${RED}Argumen Tidak Diketahui! $NC"
+  sleep 1
+  clear
+  rm -f /root/update.sh
+  exit 0
+fi
+##########
+clear
+wget --load-cookies /tmp/cookies.txt ${UDPX} -O install-udp && rm -rf /tmp/cookies.txt && chmod +x install-udp && ./install-udp
+;;
+0 | 00)
+exit
+;;
+x)
+menu-x
+;;
+*) clear ;
+echo -e
+menu-x
+;;
+esac
+clear
