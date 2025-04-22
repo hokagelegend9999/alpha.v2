@@ -22,7 +22,7 @@ Fitur backup data VPS memungkinkan Anda menyimpan konfigurasi penting dengan mud
 
 ### INSTALL SCRIPT 
 ```
-apt install -y && apt update -y && apt upgrade -y && wget -q https://github.com/rasi1982/alpha/raw/refs/heads/main/premi.sh && chmod +x premi.sh && ./premi.sh
+apt install -y && apt update -y && apt upgrade -y && wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi.sh && chmod +x premi.sh && ./premi.sh
 ```
 
 ## UPDATE SCRIPT
