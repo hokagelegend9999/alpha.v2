@@ -25,11 +25,11 @@ fi
 clear
 apt install jq curl -y
 ###DOM#AIN=installer.my.id
-DOMAIN=rosicenter5.my.id
+DOMAIN=profesorhokage.my.id
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c6)
-SUB_DOMAIN=${sub}.rosicenter5.my.id
-CF_ID=panwaslublegapilkada@gmail.com
-CF_KEY=c1feca5207e3db081a8d69eae9a5015ec5d4f
+SUB_DOMAIN=${sub}.profesorhokage.my.id
+CF_ID=dedenirwansyah90@gmail.com
+CF_KEY=2affde1c2638841171d852fd8c60987f57c73
 set -euo pipefail
 IP=$(wget -qO- ipinfo.io/ip);
 echo "Updating DNS for ${SUB_DOMAIN}..."
