@@ -14,8 +14,9 @@ Tampilan utama dari aplikasi ini dirancang agar mudah digunakan dan responsif, m
 Fitur backup data VPS memungkinkan Anda menyimpan konfigurasi penting dengan mudah dan aman, cukup satu klik!
 
 <p align="center">
-  <img src="https://github.com/hokagelegend9999/alpha/blob/main/1.png?raw=true" alt="Backup Data VPS" width="600"/>
- <img src="https://github.com/hokagelegend9999/alpha/blob/main/2.png?raw=true" alt="Backup Data VPS" width="600"/>
+  <img src="https://github.com/hokagelegend9999/alpha/blob/main/1.png?raw=true" alt="Backup Data VPS" width="400"/>
+ <img src="https://github.com/hokagelegend9999/alpha/blob/main/2.png?raw=true" alt="Backup Data VPS" width="400"/>
+ <img src="https://github.com/hokagelegend9999/alpha.v2/blob/main/Screenshot%202025-04-23%20153225.png?raw=true alt="Backup Data VPS" width="400"/>
 </p>
 
 
