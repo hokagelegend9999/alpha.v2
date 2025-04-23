@@ -6,7 +6,7 @@ mkdir -p /etc/udp
 echo "change to time GMT+7"
 ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 cd /etc/udp
-wget -q -O udp-custom "https://github.com/rasi1982/alpha/raw/refs/heads/main/udp-custom/udp-custom-linux-amd64"
+wget -q -O udp-custom "https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/udp-custom/udp-custom-linux-amd64"
 chmod +x udp-custom
 cd
 
