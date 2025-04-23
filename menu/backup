@@ -11,57 +11,166 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 LIGHT='\033[0;37m'
 # ==========================================
-# Getting
+
+# Function to display progress spinner
+spinner() {
+    local pid=$!
+    local delay=0.1
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
+# Getting bot info
 CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
 KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
+
 clear
 IP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain)
 date=$(date +"%Y-%m-%d")
-clear
-email=$(cat /root/email)
+timestamp=$(date +"%Y%m%d_%H%M%S")
+
+# Email configuration
+email=$(cat /root/email 2>/dev/null)
 if [[ "$email" = "" ]]; then
-echo "Masukkan Email Untuk Menerima Backup"
-read -rp "Email : " -e email
-cat <<EOF>>/root/email
-$email
-EOF
+    echo "Masukkan Email Untuk Menerima Backup"
+    read -rp "Email : " -e email
+    echo "$email" > /root/email
 fi
+
 clear
-echo "Mohon Menunggu , Proses Backup sedang berlangsung !!"
-rm -rf /root/backup
-mkdir /root/backup
-cp /etc/passwd backup/
-cp /etc/group backup/
-cp /etc/shadow backup/
-cp /etc/gshadow backup/
-cp /etc/crontab backup/
-cp -r /var/lib/kyt/ backup/kyt 
-cp -r /etc/xray backup/xray
-cp -r /var/www/html/ backup/html
-cd /root
-zip -r $IP-$date.zip backup > /dev/null 2>&1
-rclone copy /root/$IP-$date.zip dr:backup/
-url=$(rclone link dr:backup/$IP-$date.zip)
-id=(`echo $url | grep '^https' | cut -d'=' -f2`)
-link="https://drive.google.com/u/4/uc?id=${id}&export=download"
-echo -e "
-Detail Backup 
+echo -e "${GREEN}Mohon Menunggu, Proses Backup sedang berlangsung !!${NC}"
+
+# Backup directory and file
+BACKUP_DIR="/root/backup_${timestamp}"
+BACKUP_FILE="/root/backup_${IP}_${timestamp}.zip"
+BACKUP_FILE_NAME="backup_${IP}_${timestamp}.zip"
+
+# Create backup directory
+echo -e "${BLUE}Membuat direktori backup...${NC}"
+mkdir -p "$BACKUP_DIR" || {
+    echo -e "${RED}Gagal membuat direktori backup${NC}"
+    exit 1
+}
+
+# Copy system files with progress
+echo -e "${BLUE}Menyalin file sistem...${NC}"
+important_files=(
+    "/etc/passwd"
+    "/etc/group"
+    "/etc/shadow"
+    "/etc/gshadow"
+    "/etc/crontab"
+)
+
+for file in "${important_files[@]}"; do
+    if [ -f "$file" ]; then
+        cp "$file" "$BACKUP_DIR/" && echo -e "${GREEN}Berhasil menyalin $file${NC}" || echo -e "${RED}Gagal menyalin $file${NC}"
+    else
+        echo -e "${ORANGE}File $file tidak ditemukan${NC}"
+    fi
+done
+
+# Copy directories
+echo -e "${BLUE}Menyalin direktori...${NC}"
+directories=(
+    "/var/lib/kyt/"
+    "/etc/xray"
+    "/var/www/html/"
+)
+
+for dir in "${directories[@]}"; do
+    if [ -d "$dir" ]; then
+        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" && echo -e "${GREEN}Berhasil menyalin $dir${NC}" || echo -e "${RED}Gagal menyalin $dir${NC}"
+    else
+        echo -e "${ORANGE}Direktori $dir tidak ditemukan${NC}"
+    fi
+done
+
+# Create ZIP archive
+echo -e "${BLUE}Membuat file ZIP backup...${NC}"
+cd "$BACKUP_DIR" || {
+    echo -e "${RED}Gagal masuk ke direktori backup${NC}"
+    exit 1
+}
+
+zip -r "$BACKUP_FILE" . > /dev/null 2>&1 &
+spinner
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Gagal membuat file ZIP backup${NC}"
+    exit 1
+else
+    echo -e "${GREEN}File ZIP backup berhasil dibuat: $BACKUP_FILE${NC}"
+fi
+
+# Upload to Google Drive
+echo -e "${BLUE}Mengupload backup ke Google Drive...${NC}"
+rclone copy "$BACKUP_FILE" dr:backup/ > /dev/null 2>&1 &
+spinner
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Gagal mengupload backup ke Google Drive${NC}"
+    echo -e "${ORANGE}Memeriksa konfigurasi rclone...${NC}"
+    rclone config show
+    exit 1
+else
+    echo -e "${GREEN}Upload ke Google Drive berhasil${NC}"
+fi
+
+# Get shareable link
+echo -e "${BLUE}Mendapatkan link download...${NC}"
+url=$(rclone link dr:backup/"$BACKUP_FILE_NAME" 2>/dev/null)
+if [[ "$url" =~ "id=" ]]; then
+    id=$(echo "$url" | grep -oP 'id=\K[^&]+')
+    link="https://drive.google.com/u/4/uc?id=${id}&export=download"
+    echo -e "${GREEN}Link backup: $link${NC}"
+else
+    echo -e "${RED}Gagal mendapatkan link Google Drive${NC}"
+    link="Tidak tersedia"
+fi
+
+# Improved Email Sending Functionality
+echo -e "${BLUE}Mengirim notifikasi email...${NC}"
+email_content="
+Detail Backup
 ==================================
 IP VPS        : $IP
 Link Backup   : $link
 Tanggal       : $date
+Waktu         : $(date +"%H:%M:%S")
+File Backup   : $BACKUP_FILE_NAME
+Lokasi Local  : $BACKUP_FILE
 ==================================
-" | mail -s "Backup Data" $email
-rm -rf /root/backup
-rm -r /root/$IP-$date.zip
-clear
-CHATID="$CHATID"
-KEY="$KEY"
-TIME="$TIME"
-URL="$URL"
+"
+
+# Check if mailutils is installed
+if ! command -v mail &> /dev/null; then
+    echo -e "${ORANGE}Warning: mailutils tidak terinstall, skip mengirim email${NC}"
+    echo -e "${ORANGE}Anda bisa install dengan: apt install mailutils -y${NC}"
+else
+    # Send email with 30 seconds timeout
+    timeout 30s mail -s "Backup Data $date" "$email" <<< "$email_content" &
+    spinner
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Email notifikasi terkirim ke $email${NC}"
+    elif [ $? -eq 124 ]; then
+        echo -e "${ORANGE}Timeout saat mengirim email (30 detik)${NC}"
+    else
+        echo -e "${RED}Gagal mengirim email${NC}"
+    fi
+fi
+
+# Send Telegram notification
+echo -e "${BLUE}Mengirim notifikasi Telegram...${NC}"
 TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>   ⚠️BACKUP NOTIF⚠️</b>
@@ -69,23 +178,38 @@ TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>IP VPS  :</b> <code>${IP} </code>
 <b>DOMAIN :</b> <code>${domain}</code>
-<b>Tanggal : $date</b>
+<b>Tanggal :</b> <code>$date</code>
+<b>Waktu   :</b> <code>$(date +"%H:%M:%S")</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>Link Backup   :</b> $link
+<b>File Backup :</b> <code>$BACKUP_FILE_NAME</code>
+<b>Link Backup:</b> <code>$link</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>Silahkan copy Link dan restore di VPS baru</code>
-<code>BY BOT : @HOKAGEVPN</code>
+<code>BY BOT : @RosyVpn</code>
 "
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-echo ""
+
+curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && echo -e "${GREEN}Notifikasi Telegram terkirim${NC}" || echo -e "${RED}Gagal mengirim notifikasi Telegram${NC}"
+
+# Clean up
+echo -e "${BLUE}Membersihkan direktori sementara...${NC}"
+rm -rf "$BACKUP_DIR" && echo -e "${GREEN}Direktori sementara dibersihkan${NC}" || echo -e "${RED}Gagal membersihkan direktori sementara${NC}"
+
+# Display final information
 clear
+echo -e "${GREEN}"
 echo -e "
-Detail Backup 
+Detail Backup
 ==================================
 IP VPS        : $IP
+File Backup   : $BACKUP_FILE_NAME
 Link Backup   : $link
 Tanggal       : $date
+Waktu         : $(date +"%H:%M:%S")
+Lokasi Local  : $BACKUP_FILE
 ==================================
-"
-echo "Silahkan copy Link dan restore di VPS baru"
-echo ""
+${NC}"
+echo -e "${GREEN}File backup telah disimpan di: ${BACKUP_FILE}${NC}"
+echo -e "\n${ORANGE}Tekan Enter untuk melanjutkan...${NC}"
+read -p ""
+
+echo -e "${GREEN}Silahkan copy Link dan restore di VPS baru${NC}"
