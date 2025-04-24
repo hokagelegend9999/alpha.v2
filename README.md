@@ -109,7 +109,7 @@ chmod +x premi_fixed_debian11.sh
 #### INSTALL ULANG VPS UBUNTU DEBIAN
 
 ```
-curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh
+curl -O https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/reinstall.sh
 chmod +x reinstall.sh
 bash reinstall.sh debian 11 --password PASSWORD_KAMU
 
