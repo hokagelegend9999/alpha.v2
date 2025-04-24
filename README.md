@@ -98,7 +98,7 @@ Bot akan secara otomatis mengirimkan pesan berisi chat ID kamu.
 
 ````
 apt update -y && apt install wget -y
-wget -O https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi_fixed_debian11.sh
+wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi_fixed_debian11.sh
 chmod +x premi_fixed_debian11.sh
 ./premi_fixed_debian11.sh
 
