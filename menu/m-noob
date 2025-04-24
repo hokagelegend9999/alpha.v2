@@ -39,7 +39,7 @@ function garis() {
 echo -e "${CY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
-url_izin="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+url_izin="https://raw.githubusercontent.com/hokagelegend9999/ijin/refs/heads/main/alpha"
 ipsaya=$(curl -sS ipv4.icanhazip.com)
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
@@ -56,7 +56,7 @@ echo -e "            \033[0;35mPERMISSION DENIED !${exitsc}"
 echo -e "   ${j}Your VPS${exitsc} $ipsaya ${j}Has been Banned${exitsc}"
 echo -e "     ${j}Buy access permissions for scripts${exitsc}"
 echo -e "             ${j}Contact Admin :${exitsc}"
-echo -e "      \033[0;36mWhatsapp${exitsc} wa.me/081931472448"
+echo -e "      \033[0;36mWhatsapp${exitsc} https://t.me/hokagelegend1"
 lane
 exit
 fi
@@ -86,7 +86,7 @@ HOKAGE --add-user $user $pass --expired-user $user $exp
 clear
 
 garis
-echo -e "${CY}| \E[44;1;39m      RosiCenter ACCOUNT            \E[0m|"
+echo -e "${CY}| \E[44;1;39m      HokageCenter ACCOUNT            \E[0m|"
 garis
 echo ""
 echo -e "DOMAIN : $( cat /etc/xray/domain )"
@@ -109,7 +109,7 @@ echo ""
 
 echo -e "EMzhKvWX2V7h3pHP5ez/k2i1XMhdPh6WVetdSik3kr0f3ynS23Mmfh5NGzbqCme3KqV+1w0AXMwr5G4BL79FI2WDZ+hGmIaghQ+vzEkFlE4lgn3fP5qzJ7k5CTitksAnO3YWNDx1IdvPtwgn/2YEOlBKE4UmV7LMFlg+mWOqWIkFSbK9j2tIqFlAzJDLw+U7IKlPt5AZt/JAolrw9HEv5NN2892l9HwnK2MZcf8AfwCHhcOJLsiOJZOTCP+ywEz2iGXzg40aIdHpcAXJP6Zk+yWj23km5S9yUjq04enD6n2gVkYuA0dNgrprDnWwSH9VgNHyDBbBtwUTsSo7kWbrXgJhk+YS3Hr3I0sCHet6wNGwcEIBdrFqMEyJOd3pFZiO9TBR0xKn76P4A85WjbttuqeXrOAGb50U4Ru/5PKB8C8111w8fd7Djdl+w+DcUjLIEv/t38zX1QAhuE2IvIG3KJTSNFFYVoyvqYbbLCZSBw1f6neAdkYwUffzMVmcagTHqHvHrHWUBgCxH2g1cdhGxKDfoztC0J4mLde64nh+f9Yb9+8YuudG9W69+mhVxhoVSxJZrJ4yNq4JJ48sDjOgYCOXbwZdfuwLs+Y5wjqLqxa9YxXRrJoVIA=="
 garis
-echo -e "${GREEN}| \E[44;1;39m      Rosi STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      Hokage STORE            \E[0m|"
 garis
 
 }
@@ -118,19 +118,19 @@ garis
 function delete(){
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi DELETE°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage DELETE°            \E[0m|"
 garis
 read -p "username :" user
 
-HOKAGE --remove-user $user
+kyt --remove-user $user
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi DELETED!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage DELETED!°            \E[0m|"
 garis
 echo "USERNAME: $user"
 echo "Delete success!!"
 garis
-echo -e "${GREEN}| \E[44;1;39m      ROSI STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      Hokage STORE            \E[0m|"
 garis
 }
 
@@ -138,19 +138,19 @@ garis
 function renew(){
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi RENEW°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage RENEW°            \E[0m|"
 garis
 read -p "username: " user
 read -p "expired?: " exp
-HOKAGE --renew-user $user --expired-user $user $exp
+kyt --renew-user $user --expired-user $user $exp
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi RENEW!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage RENEW!°            \E[0m|"
 garis
 echo "USERNAME: $user"
 echo "renew success!!"
 garis
-echo -e "${GREEN}| \E[44;1;39m      ROSI STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      Hokage STORE            \E[0m|"
 garis
 }
 
@@ -160,18 +160,18 @@ garis
 function lock(){
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi LOCK°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage LOCK°            \E[0m|"
 garis
 read -p "username: " user
-HOKAGE --block-user $user
+kyt --block-user $user
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi LOCK!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage LOCK!°            \E[0m|"
 garis
 echo "USERNAME: $user"
 echo "locked success!!"
 garis
-echo -e "${GREEN}| \E[44;1;39m      ROSI STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      Hokage STORE            \E[0m|"
 garis
 }
 
@@ -184,12 +184,12 @@ function show(){
 
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi MEMBER!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage MEMBER!°            \E[0m|"
 garis
-HOKAGE --info-all-user | awk '/^\s*\+.*-> active/ {gsub(/(issued\(yyyymmdd\)|hash_key): [0-9a-f]+/, ""); print; getline; print; getline; getline; getline; print; print "═══════════════════"}'
+kyt --info-all-user | awk '/^\s*\+.*-> active/ {gsub(/(issued\(yyyymmdd\)|hash_key): [0-9a-f]+/, ""); print; getline; print; getline; getline; getline; print; print "═══════════════════"}'
 
 garis
-echo -e "${GREEN} \E[44;1;39m      ROSI STORE            \E[0m"
+echo -e "${GREEN} \E[44;1;39m      Hokage STORE            \E[0m"
 garis
 }
 
@@ -198,18 +198,18 @@ garis
 function unlock(){
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °Rosi UNLOCK°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °Hokage UNLOCK°            \E[0m|"
 garis
 read -p "username: " user
-HOKAGE --unblock-user $user
+kyt --unblock-user $user
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °RosiCenter UNLOCK!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °HokageCenter UNLOCK!°            \E[0m|"
 garis
 echo "USERNAME: $user"
 echo "unlocked success!!"
 garis
-echo -e "${GREEN}| \E[44;1;39m      RosiCenter STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      HokageCenter STORE            \E[0m|"
 garis
 }
 
@@ -218,7 +218,7 @@ garis
 function remove(){
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      RosiCenter UNLOCK            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      HokageCenter UNLOCK            \E[0m|"
 garis
 
 read -p "Apakah Anda ingin menghapus semua user? (Y/N): " choice
@@ -226,22 +226,22 @@ read -p "Apakah Anda ingin menghapus semua user? (Y/N): " choice
 if [ "$choice" == "Y" ] || [ "$choice" == "y" ]; then
     # Eksekusi perintah di sini
     echo "MENGHAPUS SEMUA USER!"
-HOKAGE --remove-all-user
+kyt --remove-all-user
 elif [ "$choice" == "N" ] || [ "$choice" == "n" ]; then
     echo "Membatalkan penghapusan."
-menu-HOKAGE
+menu-kyt
 else
     echo "Pilihan tidak valid."
 fi
 
 clear
 garis
-echo -e "${GREEN}| \E[44;1;39m      °RosiCenter UNLOCK!°            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m      °HokageCenter UNLOCK!°            \E[0m|"
 garis
 echo "USERNAME: $user"
 echo "unlocked success!!"
 garis
-echo -e "${GREEN}| \E[44;1;39m     RosiCenter STORE            \E[0m|"
+echo -e "${GREEN}| \E[44;1;39m     HokageCenter STORE            \E[0m|"
 garis
 }
 
@@ -250,7 +250,7 @@ garis
 
 clear
 garis
-echo -e "${GREEN} \E[44;1;39m     ALL MENU ROSIVPN            \E[0m"
+echo -e "${GREEN} \E[44;1;39m     ALL MENU HokageVPN            \E[0m"
 garis
 
 
@@ -264,7 +264,7 @@ echo -e "[06] SHOW ALL USER HOKAGE"
 echo -e "[07] REMOVE ALL USER HOKAGE"
 echo -e "[00] BACK TO MAIN MENU"
 garis
-echo -e "${GREEN} \E[44;1;39m            RosiCenter STORE            \E[0m"
+echo -e "${GREEN} \E[44;1;39m            HokageCenter STORE            \E[0m"
 garis
 echo -e ""
 echo
