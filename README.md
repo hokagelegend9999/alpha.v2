@@ -85,13 +85,15 @@ Bot akan secara otomatis mengirimkan pesan berisi chat ID kamu.
 
 
 
-mendapatkan akses root ke vps mu
+### mendapatkan akses root ke vps mu
 
 ``````
 
   wget -qO- -O aksesroot.sh https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/aksesroot.sh && bash aksesroot.sh
 
 ```````
+
+
 #### install debian 11
 
 ````
