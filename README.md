@@ -98,8 +98,7 @@ install debian 11
 
 ````
 apt update -y && apt install wget -y
-wget -O premi.sh https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/main/premi.sh
-chmod +x premi.sh
-./premi.sh
+wget -O https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi_fixed_debian11.sh
+chmod +x premi_fixed_debian11.sh
+./premi_fixed_debian11.sh
 
-apt install -y && apt update -y && apt upgrade -y && wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi.sh && chmod +x premi.sh && ./premi.sh
