@@ -33,7 +33,7 @@ SERONLINE=$(uptime -p | cut -d " " -f 2-10000)
 clear
 MYIP=$(curl -sS ipv4.icanhazip.com)
 echo ""
-izinsc="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+izinsc="https://raw.githubusercontent.com/hokagelegend9999/ijin/refs/heads/main/alpha"
 # USERNAME
 rm -f /usr/bin/user
 username=$(curl ${izinsc} | grep $MYIP | awk '{print $2}')
@@ -161,7 +161,7 @@ a=" ${CYAN}ACCOUNT PREMIUM"
 #clear
 echo -e " "
 echo -e " ${z}╭══════════════════════════════════════════════════════════╮${NC}"
-echo -e " ${z}│$NC${f}          WELCOME TO  ROSI CENTER STORE AUTOSCRIPT PREMIUM      $NC${z}│$NC"
+echo -e " ${z}│$NC${f}    WELCOME TO  HOKAGE LEGEND STORE AUTOSCRIPT PREMIUM      $NC${z}│$NC"
 echo -e " ${z}╰══════════════════════════════════════════════════════════╯${NC}"
 echo -e " ${z}══════════════════════════════════════════════════════════${NC}"
 echo -e " ${z}$NC$r ⇲ $NC$y System OS ${NC}     $Blue=$NC $MODEL${NC}"
@@ -182,7 +182,7 @@ echo -e "                 ${CYAN}ACCOUNT VLESS/WS/GRPC${NC}  $y=$NC $vla$NC"
 echo -e "                 ${CYAN}ACCOUNT TROJAN/WS/GRPC${NC} $y=$NC $trb${NC}"
 echo -e "                 ${CYAN}ACCOUNT SHADOW/WS/GRPC${NC} $y=$NC $ssa${NC}"
 echo -e "          ${NC}└─────────────────────────────────────┘${NC}"
-echo -e "               ${KIRI} ${RED} ROSI STORE TUNNELING  ${NC} ${KANAN}"
+echo -e "               ${KIRI} ${RED} HOKAGE LEGEND STORE TUNNELING  ${NC} ${KANAN}"
 echo -e " ${z}╭════════════════╮╭══════════════════╮╭════════════════════╮${NC}"
 echo -e " ${z}│ ${NC}$y SSH$NC : $status_ssh" "       $y NGINX$NC : $status_nginx" "       $y XRAY$NC : $status_xray     $NC${z}│$NC" 
 echo -e " ${z}│ ${NC}$y WS-ePRO$NC : $status_ws_epro" "   $y DROPBEAR$NC : $status_dropbear" "    $y HAPROXY$NC : $status_haproxy  $NC${z}│$NC" 
@@ -202,7 +202,7 @@ echo -e " ${z}│$NC${z} IP ADDRESS ${z}=$NC $IPVPS${NC}"
 echo -e " ${z}│$NC${z} User$NC       ${z}=$NC $username"
 echo -e " ${z}│$NC${z} Exp Script$NC ${z}=$NC $exp $certifacate Days$NC $sts"
 echo -e " ${z}╰══════════════════════════════════════════════════════════╯${NC}"
-echo -e "             ${KIRI}${z}THANKS YOU FOR USING SCRIPT ROSI CENTER${z}${KANAN}"
+echo -e "     ${KIRI}${z}THANKS YOU FOR USING SCRIPT HOKAGE LEGEND${z}${KANAN}"
 echo -e ""
 read -p " PILIH MENU DENGAN CARA KETIK 1/8 : " opt
 echo -e ""
