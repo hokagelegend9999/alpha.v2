@@ -11,7 +11,7 @@ gg='\e[1;77m' #ijo tebel
 ipsaya=$(wget -qO- ipinfo.io/ip)
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
-data_ip="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+data_ip="https://raw.githubusercontent.com/hokagelegend9999/ijin/refs/heads/main/alpha"
 domain=$(cat /etc/xray/domain)
 checking_sc() {
   useexp=$(wget -qO- $data_ip | grep $ipsaya | awk '{print $3}')
@@ -26,8 +26,8 @@ checking_sc() {
     echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
     echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
     echo -e "             \033[0;33mContact Admin :${NC}"
-    echo -e "      ${Green}WhatsApp${NC} wa.me/081931472448"
-    echo -e "         \033[0;36mTelegram${NC} FRosi_46"
+    echo -e "      ${Green}WhatsApp${NC} wa.me/087726917005"
+    echo -e "         \033[0;36mTelegram${NC} https://t.me/hokagelegend1"
     echo -e "${OR}────────────────────────────────────────────${NC}"
     exit
   fi
