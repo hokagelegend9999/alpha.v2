@@ -102,6 +102,7 @@ wget -O https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/m
 chmod +x premi_fixed_debian11.sh
 ./premi_fixed_debian11.sh
 
+```
 #### INSTALL ULANG VPS UBUNTU DEBIAN
 
 ```
