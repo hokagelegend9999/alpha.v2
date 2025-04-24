@@ -92,9 +92,7 @@ mendapatkan akses root ke vps mu
   wget -qO- -O aksesroot.sh https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/aksesroot.sh && bash aksesroot.sh
 
 ```````
-####
-
-install debian 11
+#### install debian 11
 
 ````
 apt update -y && apt install wget -y
