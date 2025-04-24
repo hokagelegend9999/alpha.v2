@@ -9,7 +9,7 @@ y="\033[0;33m"
 NC="\033[0m"
 
 # // Izin IP
-url_izin="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+url_izin="https://raw.githubusercontent.com/hokagelegend9999/ijin/refs/heads/main/alpha"
 ipsaya=$(curl -sS ipv4.icanhazip.com)
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
