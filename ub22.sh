@@ -46,11 +46,11 @@ date_list=$(date +"%Y-%m-%d" -d "$data_server")
 
 # // Banner
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
-echo -e " WELCOME TO ROSI STORE VPN ${YELLOW}(${NC}${green}Stable Edition${NC}${YELLOW})${NC}"
+echo -e " WELCOME TO HOKAGE LEGEND VPN ${YELLOW}(${NC}${green}Stable Edition${NC}${YELLOW})${NC}"
 echo -e " PROSES PENGECEKAN IP ADDRESS ANDA !!"
 echo -e "${purple}----------------------------------------------------------${NC}"
-echo -e " ›AUTHOR : ${green}ROSI STORE® ${NC}${YELLOW}(${NC}${green}V 3.5${NC}${YELLOW})${NC}"
-echo -e " ›TEAM 🅥🅝: ROSI STORE ${YELLOW}(${NC} 2025 ${YELLOW})${NC}"
+echo -e " ›AUTHOR : ${green}HOKAGE STORE® ${NC}${YELLOW}(${NC}${green}V 3.5${NC}${YELLOW})${NC}"
+echo -e " ›TEAM 🅥🅝: HOKAGE LEGEND ${YELLOW}(${NC} 2025 ${YELLOW})${NC}"
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
 echo ""
 sleep 2
