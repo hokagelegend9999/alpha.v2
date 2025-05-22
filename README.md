@@ -96,7 +96,8 @@ Bot akan secara otomatis mengirimkan pesan berisi chat ID kamu.
 
 #### install debian 11
 
-````
+
+```
 apt update -y && apt install wget -y
 wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/premi_fixed_debian11.sh
 chmod +x premi_fixed_debian11.sh
@@ -127,3 +128,4 @@ VPN ( SSTP + PPTP + L2TP )
 
 ```
 wget https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update && chmod +x alpha2_update && ./alpha2_update
+```
