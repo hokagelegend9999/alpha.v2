@@ -128,6 +128,6 @@ VPN ( SSTP + PPTP + L2TP )
 
 ```
 cd
-rm alpha2_update
-wget https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update && chmod +x alpha2_update && ./alpha2_update
+rm alphav2_update
+wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/alphav2_update && chmod +x alphav2_update && ./alphav2_update
 ```
