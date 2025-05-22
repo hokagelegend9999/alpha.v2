@@ -120,3 +120,10 @@ sudo apt install -t bullseye-backports haproxy
 sed -i "s#xxx#https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/#g" /etc/haproxy/haproxy.cfg
 sudo systemctl restart haproxy
 sudo systemctl status haproxy
+
+
+### MENU TAMBAHAN ( OPSIONAL)
+VPN ( SSTP + PPTP + L2TP )
+
+```
+wget https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update && chmod +x alpha2_update && ./alpha2_update
