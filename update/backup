@@ -1,6 +1,9 @@
 #!/bin/bash
-# My Telegram : https://t.me/hokagevpnpremium
 # ==========================================
+# HOKAGE VPN BACKUP SCRIPT - FIXED VERSION
+# Telegram : https://t.me/hokagevpnpremium
+# ==========================================
+
 # Modern Color Palette
 RED='\033[1;91m'
 GREEN='\033[1;92m'
@@ -19,151 +22,44 @@ ARROW="➜"
 DOT="•"
 
 # ==========================================
-# Function to display modern spinner
-spinner() {
+# FUNCTIONS
+# ==========================================
+
+function display_header() {
+    clear
+    echo -e "${PURPLE}"
+    echo -e "╔════════════════════════════════════════════════╗"
+    echo -e "║           ${WHITE}🚀 HOKAGE VPN BACKUP SYSTEM 🚀${PURPLE}          ║"
+    echo -e "╠════════════════════════════════════════════════╣"
+    echo -e "║ ${WHITE}IP: ${CYAN}$IP ${WHITE}| Domain: ${CYAN}$domain ${PURPLE}               ║"
+    echo -e "║ ${WHITE}Date: ${CYAN}$date ${WHITE}| Time: ${CYAN}$(date +"%H:%M:%S") ${PURPLE}          ║"
+    echo -e "╚════════════════════════════════════════════════╝${NC}\n"
+}
+
+function spinner() {
     local pid=$!
     local delay=0.15
     local i=0
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+    while kill -0 $pid 2>/dev/null; do
         i=$(( (i+1) %8 ))
-        printf "\e[1;96m${SPINNER[$i]}\e[0m  \e[1;97m%s\e[0m" "$1"
+        printf "\r${CYAN}${SPINNER[$i]}${WHITE}  %s${NC}" "$1"
         sleep $delay
-        printf "\r\033[K"
     done
+    printf "\r\033[K"
 }
 
-# Function to display progress bar
-progress_bar() {
-    local duration=${1}
-    local columns=$(tput cols)
-    local space=$(( columns - 20 ))
-    for ((i=0; i<=100; i++)); do
-        sleep $duration
-        printf "\r\e[1;97mProgress: \e[1;92m[%-${space}s] %d%%\e[0m" $(printf "%${space}s" | tr ' ' '=') $i
-    done
-    printf "\n"
+function cleanup() {
+    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Cleaning up...${NC}"
+    rm -rf "$BACKUP_DIR" & spinner "Removing temporary files" && {
+        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Cleanup completed${NC}"
+    } || {
+        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to clean up temporary files${NC}"
+    }
 }
 
-# Function to display header
-display_header() {
-    clear
-    echo -e "\n\e[1;95m╔════════════════════════════════════════════════╗"
-    echo -e "║           \e[1;97m🚀 HOKAGE VPN BACKUP SYSTEM 🚀\e[1;95m          ║"
-    echo -e "╠════════════════════════════════════════════════╣"
-    echo -e "║ \e[1;97mIP: \e[1;96m$IP \e[1;97m| Domain: \e[1;96m$domain \e[1;95m               ║"
-    echo -e "║ \e[1;97mDate: \e[1;96m$date \e[1;97m| Time: \e[1;96m$(date +"%H:%M:%S") \e[1;95m          ║"
-    echo -e "╚════════════════════════════════════════════════╝\e[0m\n"
-}
-
-# Getting bot info
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
-export TIME="10"
-export URL="https://api.telegram.org/bot$KEY/sendMessage"
-
-IP=$(curl -sS ipv4.icanhazip.com)
-domain=$(cat /etc/xray/domain)
-date=$(date +"%Y-%m-%d")
-timestamp=$(date +"%Y%m%d_%H%M%S")
-
-display_header
-
-# Backup directory and file
-BACKUP_DIR="/root/backup_${timestamp}"
-BACKUP_FILE="/root/backup_${IP}_${timestamp}.zip"
-BACKUP_FILE_NAME="backup_${IP}_${timestamp}.zip"
-
-# Create backup directory
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mCreating backup directory...\e[0m"
-mkdir -p "$BACKUP_DIR" & spinner "Preparing workspace" && {
-    echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mDirectory created: \e[1;97m$BACKUP_DIR\e[0m"
-} || {
-    echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to create directory\e[0m"
-    exit 1
-}
-
-# Copy system files with progress
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mCopying system files...\e[0m"
-important_files=(
-    "/etc/passwd"
-    "/etc/group"
-    "/etc/shadow"
-    "/etc/gshadow"
-    "/etc/crontab"
-)
-
-for file in "${important_files[@]}"; do
-    if [ -f "$file" ]; then
-        cp "$file" "$BACKUP_DIR/" & spinner "Copying $(basename "$file")" && {
-            echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mCopied: \e[1;97m$(basename "$file")\e[0m"
-        } || {
-            echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to copy: \e[1;97m$(basename "$file")\e[0m"
-        }
-    else
-        echo -e "\e[1;97m${DOT} ${CROSSMARK} \e[1;93mFile not found: \e[1;97m$(basename "$file")\e[0m"
-    fi
-done
-
-# Copy directories
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mCopying directories...\e[0m"
-directories=(
-    "/var/lib/kyt/"
-    "/etc/xray"
-    "/var/www/html/"
-)
-
-for dir in "${directories[@]}"; do
-    if [ -d "$dir" ]; then
-        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" & spinner "Copying $(basename "$dir")" && {
-            echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mCopied: \e[1;97m$(basename "$dir")\e[0m"
-        } || {
-            echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to copy: \e[1;97m$(basename "$dir")\e[0m"
-        }
-    else
-        echo -e "\e[1;97m${DOT} ${CROSSMARK} \e[1;93mDirectory not found: \e[1;97m$(basename "$dir")\e[0m"
-    fi
-done
-
-# Create ZIP archive
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mCreating ZIP archive...\e[0m"
-cd "$BACKUP_DIR" || {
-    echo -e "\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to enter backup directory\e[0m"
-    exit 1
-}
-
-zip -r "$BACKUP_FILE" . > /dev/null 2>&1 & spinner "Compressing files" && {
-    echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mZIP created: \e[1;97m$BACKUP_FILE\e[0m"
-} || {
-    echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to create ZIP file\e[0m"
-    exit 1
-}
-
-# Upload to Google Drive
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mUploading to Google Drive...\e[0m"
-rclone copy "$BACKUP_FILE" dr:backup/ > /dev/null 2>&1 & spinner "Uploading to cloud" && {
-    echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mUpload successful to Google Drive\e[0m"
-} || {
-    echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to upload to Google Drive\e[0m"
-    echo -e "\e[1;97m${DOT} ${ARROW} \e[1;93mChecking rclone configuration...\e[0m"
-    rclone config show
-    exit 1
-}
-
-# Get shareable link
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mGenerating download link...\e[0m"
-url=$(rclone link dr:backup/"$BACKUP_FILE_NAME" 2>/dev/null)
-if [[ "$url" =~ "id=" ]]; then
-    id=$(echo "$url" | grep -oP 'id=\K[^&]+')
-    link="https://drive.google.com/u/4/uc?id=${id}&export=download"
-    echo -e "\e[1;97m${DOT} ${CHECKMARK} \e[1;92mDownload link: \e[1;96m$link\e[0m"
-else
-    echo -e "\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to generate Google Drive link\e[0m"
-    link="Not available"
-fi
-
-# Send Telegram notification
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mSending Telegram notification...\e[0m"
-TEXT="
+function send_telegram() {
+    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Sending Telegram notification...${NC}"
+    local TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>   🚀 BACKUP NOTIFICATION 🚀</b>
 <b>     HOKAGE VPN BACKUP</b>
@@ -174,43 +70,186 @@ TEXT="
 <b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>📦 File :</b> <code>$BACKUP_FILE_NAME</code>
-<b>🔗 Link:</b> <code>$link</code>
+<b>🔗 Link:</b> <code>$gd_link</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>Copy link to restore on new VPS</code>
 <code>BY BOT : @RosyVpn</code>
 "
-
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && {
-    echo -e "\e[1;97m${DOT} ${CHECKMARK} \e[1;92mTelegram notification sent\e[0m"
-} || {
-    echo -e "\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to send Telegram notification\e[0m"
+    curl -s --max-time 10 -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && {
+        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Telegram notification sent${NC}"
+    } || {
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to send Telegram notification${NC}"
+    }
 }
 
-# Clean up
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mCleaning temporary files...\e[0m"
-rm -rf "$BACKUP_DIR" & spinner "Removing temporary files" && {
-    echo -e "\r\e[1;97m${DOT} ${CHECKMARK} \e[1;92mTemporary files cleaned\e[0m"
-} || {
-    echo -e "\r\e[1;97m${DOT} ${CROSSMARK} \e[1;91mFailed to clean temporary files\e[0m"
+function generate_gdrive_link() {
+    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Generating Google Drive link...${NC}"
+    
+    # Method 1: Try rclone link first
+    local url=$(rclone link "dr:backup/$BACKUP_FILE_NAME" 2>/dev/null)
+    
+    # Method 2: If rclone link fails, try alternative method
+    if [ -z "$url" ] || [[ ! "$url" =~ "drive.google.com" ]]; then
+        local file_id=$(rclone lsjson "dr:backup/$BACKUP_FILE_NAME" | jq -r '.[0].ID' 2>/dev/null)
+        if [ -n "$file_id" ]; then
+            url="https://drive.google.com/uc?id=${file_id}&export=download"
+        fi
+    fi
+
+    # Method 3: Direct link format
+    if [ -z "$url" ]; then
+        url="https://drive.google.com/file/d/$(rclone lsjson "dr:backup/$BACKUP_FILE_NAME" | jq -r '.[0].ID')/view?usp=drivesdk"
+    fi
+
+    # Final validation
+    if [[ "$url" =~ "drive.google.com" ]]; then
+        gd_link="$url"
+        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Google Drive link generated successfully${NC}"
+        echo -e "${CYAN}${gd_link}${NC}"
+        return 0
+    else
+        gd_link="Not available"
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to generate valid Google Drive link${NC}"
+        return 1
+    fi
 }
 
-# Display final information
+# ==========================================
+# MAIN SCRIPT
+# ==========================================
+
+# Initialize variables
+IP=$(curl -sS ipv4.icanhazip.com || echo "Unknown")
+domain=$(cat /etc/xray/domain 2>/dev/null || echo "No-domain")
+date=$(date +"%Y-%m-%d")
+timestamp=$(date +"%Y%m%d_%H%M%S")
+
+# Bot configuration
+CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3 2>/dev/null || echo "")
+KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2 2>/dev/null || echo "")
+export URL="https://api.telegram.org/bot$KEY/sendMessage"
+
 display_header
-echo -e "\e[1;95m╔════════════════════════════════════════════════╗"
-echo -e "║                \e[1;97m🔍 BACKUP SUMMARY 🔍\e[1;95m               ║"
+
+# Backup configuration
+BACKUP_DIR="/root/backup_${timestamp}"
+BACKUP_FILE="/root/backup_${IP//./_}_${timestamp}.zip"
+BACKUP_FILE_NAME="backup_${IP//./_}_${timestamp}.zip"
+
+# Create backup directory
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Creating backup directory...${NC}"
+mkdir -p "$BACKUP_DIR" & spinner "Preparing workspace" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Directory created: ${WHITE}$BACKUP_DIR${NC}"
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to create directory${NC}"
+    exit 1
+}
+
+# Copy system files
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Copying system files...${NC}"
+important_files=(
+    "/etc/passwd"
+    "/etc/group"
+    "/etc/shadow"
+    "/etc/gshadow"
+    "/etc/crontab"
+    "/etc/xray/config.json"
+    "/etc/v2ray/config.json"
+)
+
+for file in "${important_files[@]}"; do
+    if [ -f "$file" ]; then
+        cp "$file" "$BACKUP_DIR/" & spinner "Copying $(basename "$file")" && {
+            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Copied: ${WHITE}$(basename "$file")${NC}"
+        } || {
+            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to copy: ${WHITE}$(basename "$file")${NC}"
+        }
+    else
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}File not found: ${WHITE}$(basename "$file")${NC}"
+    fi
+done
+
+# Copy directories
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Copying directories...${NC}"
+directories=(
+    "/var/lib/kyt/"
+    "/etc/xray"
+    "/etc/v2ray"
+    "/var/www/html"
+    "/usr/local/etc/xray"
+)
+
+for dir in "${directories[@]}"; do
+    if [ -d "$dir" ]; then
+        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" & spinner "Copying $(basename "$dir")" && {
+            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Copied: ${WHITE}$(basename "$dir")${NC}"
+        } || {
+            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to copy: ${WHITE}$(basename "$dir")${NC}"
+        }
+    else
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Directory not found: ${WHITE}$(basename "$dir")${NC}"
+    fi
+done
+
+# Create ZIP archive
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Creating ZIP archive...${NC}"
+cd "$BACKUP_DIR" || {
+    echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to enter backup directory${NC}"
+    exit 1
+}
+
+zip -r "$BACKUP_FILE" . > /dev/null 2>&1 & spinner "Compressing files" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}ZIP created: ${WHITE}$BACKUP_FILE${NC}"
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to create ZIP file${NC}"
+    exit 1
+}
+
+# Upload to Google Drive
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Uploading to Google Drive...${NC}"
+if command -v rclone &> /dev/null; then
+    rclone copy "$BACKUP_FILE" "dr:backup/" > /dev/null 2>&1 & spinner "Uploading to cloud" && {
+        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Upload successful to Google Drive${NC}"
+        
+        # Generate Google Drive link
+        generate_gdrive_link
+        
+    } || {
+        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to upload to Google Drive${NC}"
+        gd_link="Not available"
+    }
+else
+    echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Rclone not installed, skipping Google Drive upload${NC}"
+    gd_link="Not available"
+fi
+
+# Send Telegram notification
+[ -n "$CHATID" ] && [ -n "$KEY" ] && send_telegram
+
+# Display summary
+display_header
+echo -e "${PURPLE}"
+echo -e "╔════════════════════════════════════════════════╗"
+echo -e "║                ${WHITE}🔍 BACKUP SUMMARY 🔍${PURPLE}               ║"
 echo -e "╠════════════════════════════════════════════════╣"
-echo -e "║ \e[1;97mIP Address   : \e[1;96m$IP\e[1;95m                        ║"
-echo -e "║ \e[1;97mBackup File  : \e[1;96m$BACKUP_FILE_NAME\e[1;95m          ║"
-echo -e "║ \e[1;97mDownload Link: \e[1;96m${link:0:40}...\e[1;95m ║"
-echo -e "║ \e[1;97mDate/Time    : \e[1;96m$date $(date +"%H:%M:%S")\e[1;95m          ║"
-echo -e "╚════════════════════════════════════════════════╝\e[0m"
+echo -e "║ ${WHITE}IP Address   : ${CYAN}$IP${PURPLE}                        ║"
+echo -e "║ ${WHITE}Domain       : ${CYAN}$domain${PURPLE}                    ║"
+echo -e "║ ${WHITE}Backup File  : ${CYAN}$BACKUP_FILE_NAME${PURPLE}          ║"
+echo -e "║ ${WHITE}Backup Size  : ${CYAN}$(du -sh $BACKUP_FILE | cut -f1)${PURPLE}                ║"
+echo -e "║ ${WHITE}Date/Time    : ${CYAN}$date $(date +"%H:%M:%S")${PURPLE}          ║"
+echo -e "╚════════════════════════════════════════════════╝${NC}"
 
-echo -e "\n\e[1;97m${DOT} ${CHECKMARK} \e[1;92mBackup completed successfully!\e[0m"
-echo -e "\e[1;97m${DOT} ${ARROW} \e[1;96mLocal backup path: \e[1;97m$BACKUP_FILE\e[0m\n"
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Google Drive Link:${NC}"
+if [ "$gd_link" != "Not available" ]; then
+    echo -e "${GREEN}${gd_link}${NC}"
+else
+    echo -e "${RED}Link not available${NC}"
+fi
 
-# Interactive prompt
-read -p "$(echo -e "\e[1;97m${ARROW} \e[1;93mPress Enter to continue...\e[0m")"
+# Cleanup
+cleanup
 
-echo -e "\e[1;95m╔════════════════════════════════════════════════╗"
-echo -e "║ \e[1;92m✅ Backup process completed successfully!      \e[1;95m║"
-echo -e "╚════════════════════════════════════════════════╝\e[0m"
+echo -e "\n${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup process completed successfully!${NC}"
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Local backup path: ${WHITE}$BACKUP_FILE${NC}\n"
+
+exit 0
