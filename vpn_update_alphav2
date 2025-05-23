@@ -1,147 +1,94 @@
 #!/bin/bash
 
-# Title: Modern VPN Installer
-# Version: 1.0
-# Author: Your Name
+# VPN Installer AlphaV2
+# Eksekusi langsung tanpa pilihan menu
 
-# Check if Zenity is installed (for GUI)
-if ! command -v zenity &> /dev/null; then
-    sudo apt-get install -y zenity
-fi
-
-# Colors for terminal output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Function to display progress with animated loading
-show_progress() {
-    (
-        echo "0" ; echo "# $1"
-        sleep 1
-        echo "25" ; echo "# $1 in progress..."
-        sleep 1
-        echo "50" ; echo "# $1 halfway done"
-        sleep 1
-        echo "75" ; echo "# $1 almost complete"
-        sleep 1
-        echo "100" ; echo "# $1 completed!"
-    ) | zenity --progress \
-      --title="Modern VPN Installer" \
-      --text="Initializing..." \
-      --percentage=0 \
-      --auto-close \
-      --width=400
+# Fungsi untuk tampilan header
+show_header() {
+    clear
+    echo -e "\e[1;36m"
+    echo "   ██╗   ██╗██████╗ ███╗   ██╗ █████╗ ██████╗ "
+    echo "   ██║   ██║██╔══██╗████╗  ██║██╔══██╗██╔══██╗"
+    echo "   ██║   ██║██████╔╝██╔██╗ ██║███████║██████╔╝"
+    echo "   ██║   ██║██╔═══╝ ██║╚██╗██║██╔══██║██╔═══╝ "
+    echo "   ╚██████╔╝██║     ██║ ╚████║██║  ██║██║     "
+    echo -e "    ╚═════╝ ╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     \e[0m"
+    echo -e "\e[1;33m------------------------------------------\e[0m"
+    echo -e "\e[1;32m       VPN INSTALLER - AUTO EXECUTION\e[0m"
+    echo -e "\e[1;33m------------------------------------------\e[0m"
+    echo
 }
 
-# Function to install VPN protocols
-install_vpn_protocols() {
-    show_progress "Preparing VPN Protocols Installation"
-    
-    (
-        echo "10" ; echo "# Removing old installer..."
-        cd
-        rm -f installer-sstp.sh
-        echo "20" ; echo "# Downloading new installer..."
-        wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/installer-sstp.sh
-        echo "40" ; echo "# Setting permissions..."
-        chmod +x installer-sstp.sh
-        echo "60" ; echo "# Running installer..."
-        sudo ./installer-sstp.sh
-        echo "80" ; echo "# Cleaning up..."
-        rm -f installer-sstp.sh
-        echo "100" ; echo "# VPN Protocols installed successfully!"
-    ) | zenity --progress \
-      --title="Installing VPN Protocols" \
-      --text="Installing PPTP/L2TP/SSTP..." \
-      --percentage=0 \
-      --auto-close \
-      --width=400
-    
-    zenity --info --title="Success" --text="VPN Protocols (PPTP/L2TP/SSTP) installed successfully!" --width=300
+# Fungsi progress bar animasi
+animated_progress() {
+    echo -ne "\e[1;34m["
+    while true; do
+        for i in {1..20}; do
+            echo -ne "▓"
+            sleep 0.1
+        done
+        echo -ne "]\r["
+        sleep 0.1
+    done
 }
 
-# Function to install updates
-install_updates() {
-    show_progress "Preparing System Update"
+# Fungsi utama
+main() {
+    show_header
     
-    (
-        echo "10" ; echo "# Removing old update script..."
-        cd
-        rm -f alpha2_update
-        echo "30" ; echo "# Downloading new update script..."
-        wget -q https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update
-        echo "50" ; echo "# Setting permissions..."
-        chmod +x alpha2_update
-        echo "70" ; echo "# Running updates..."
-        ./alpha2_update
-        echo "90" ; echo "# Cleaning up..."
-        rm -f alpha2_update
-        echo "100" ; echo "# System updated successfully!"
-    ) | zenity --progress \
-      --title="System Update" \
-      --text="Updating system components..." \
-      --percentage=0 \
-      --auto-close \
-      --width=400
+    echo -e "\e[1;32mMemulai proses instalasi...\e[0m"
+    echo
     
-    zenity --info --title="Success" --text="System updates installed successfully!" --width=300
+    # Animasi progress bar di background
+    animated_progress &
+    ANIM_PID=$!
+    
+    # 1. Install PPTP/L2TP/SSTP
+    echo -e "\e[1;33m▶ Memulai instalasi PPTP/L2TP/SSTP...\e[0m"
+    cd
+    rm -f installer-sstp.sh
+    wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/installer-sstp.sh
+    chmod +x installer-sstp.sh
+    sudo ./installer-sstp.sh
+    rm -f installer-sstp.sh
+    echo -e "\e[1;32m✔ PPTP/L2TP/SSTP berhasil diinstall\e[0m"
+    echo
+    
+    # 2. Install Update
+    echo -e "\e[1;33m▶ Memulai instalasi System Update...\e[0m"
+    cd
+    rm -f alpha2_update
+    wget -q https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update
+    chmod +x alpha2_update
+    ./alpha2_update
+    rm -f alpha2_update
+    echo -e "\e[1;32m✔ System Update berhasil diinstall\e[0m"
+    echo
+    
+    # 3. Install Menu
+    echo -e "\e[1;33m▶ Memulai instalasi VPN Menu...\e[0m"
+    cd /usr/local/sbin
+    rm -f vpn
+    wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
+    sudo chmod +x vpn
+    cd
+    echo -e "\e[1;32m✔ VPN Menu berhasil diinstall\e[0m"
+    echo
+    
+    # Hentikan animasi progress bar
+    kill $ANIM_PID
+    wait $ANIM_PID 2>/dev/null
+    
+    echo -e "\e[1;36m------------------------------------------\e[0m"
+    echo -e "\e[1;32m✔ Semua instalasi selesai!\e[0m"
+    echo -e "\e[1;36m------------------------------------------\e[0m"
+    
+    # Self-cleanup
+    echo -e "\n\e[1;33mMembersihkan file installer...\e[0m"
+    sleep 2
+    rm -f "$0"
+    exit 0
 }
 
-# Function to install VPN menu
-install_vpn_menu() {
-    show_progress "Preparing VPN Menu Installation"
-    
-    (
-        echo "20" ; echo "# Changing directory..."
-        cd /usr/local/sbin
-        echo "40" ; echo "# Removing old menu..."
-        rm -f vpn
-        echo "60" ; echo "# Downloading new menu..."
-        wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
-        echo "80" ; echo "# Setting permissions..."
-        sudo chmod +x vpn
-        echo "100" ; echo "# VPN Menu installed successfully!"
-    ) | zenity --progress \
-      --title="Installing VPN Menu" \
-      --text="Setting up VPN management menu..." \
-      --percentage=0 \
-      --auto-close \
-      --width=400
-    
-    zenity --info --title="Success" --text="VPN Menu installed successfully!" --width=300
-}
-
-# Main menu
-while true; do
-    choice=$(zenity --list \
-        --title="Modern VPN Installer" \
-        --text="Select an option:" \
-        --width=500 --height=300 \
-        --column="Option" --column="Description" \
-        "1" "Install VPN Protocols (PPTP/L2TP/SSTP)" \
-        "2" "Install System Updates" \
-        "3" "Install VPN Menu" \
-        "4" "Exit")
-    
-    case $choice in
-        "1")
-            install_vpn_protocols
-            ;;
-        "2")
-            install_updates
-            ;;
-        "3")
-            install_vpn_menu
-            ;;
-        "4")
-            zenity --info --title="Goodbye" --text="Thank you for using Modern VPN Installer!" --width=300
-            exit 0
-            ;;
-        *)
-            exit 0
-            ;;
-    esac
-done
+# Jalankan fungsi utama
+main
