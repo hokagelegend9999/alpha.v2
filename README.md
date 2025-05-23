@@ -133,3 +133,8 @@ wget https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads
 cd
 rm alpha2_update
 ```
+
+FIX UPDATE
+
+```
+wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2 chmod +x vpn_update_alphav2 && ./vpn_update_alphav2
