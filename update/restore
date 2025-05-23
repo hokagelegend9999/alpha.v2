@@ -1,39 +1,28 @@
 #!/bin/bash
 # ==========================================
-# HOKAGE VPN AUTOMATIC RESTORE SCRIPT
-# Telegram : https://t.me/hokagevpnpremium
+# HOKAGE VPN RESTORE SYSTEM - FINAL VERSION
+# Telegram: https://t.me/hokagevpnpremium
 # ==========================================
 
-# Modern Color Palette
-RED='\033[1;91m'
-GREEN='\033[1;92m'
-YELLOW='\033[1;93m'
-BLUE='\033[1;94m'
-PURPLE='\033[1;95m'
-CYAN='\033[1;96m'
-WHITE='\033[1;97m'
-NC='\033[0m'
+# Color Palette
+RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'
+BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'
+WHITE='\033[1;97m'; NC='\033[0m'
 
-# Animation Characters
+# Animation
 SPINNER=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
-CHECKMARK="✓"
-CROSSMARK="✗"
-ARROW="➜"
-DOT="•"
+CHECKMARK="✓"; CROSSMARK="✗"; ARROW="➜"; DOT="•"
 
-# ==========================================
-# FUNCTIONS
-# ==========================================
-
+# ================= FUNCTIONS =================
 function display_header() {
     clear
     echo -e "${PURPLE}"
-    echo -e "╔════════════════════════════════════════════════╗"
-    echo -e "║        ${WHITE}🚀 HOKAGE VPN AUTORESTORE SYSTEM 🚀${PURPLE}       ║"
-    echo -e "╠════════════════════════════════════════════════╣"
-    echo -e "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com || echo "Unknown")${PURPLE}               ║"
-    echo -e "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d") ${WHITE}| Time: ${CYAN}$(date +"%H:%M:%S") ${PURPLE}          ║"
-    echo -e "╚════════════════════════════════════════════════╝${NC}\n"
+    echo "╔════════════════════════════════════════════════╗"
+    echo "║          ${WHITE}🚀 HOKAGE VPN RESTORE SYSTEM 🚀${PURPLE}         ║"
+    echo "╠════════════════════════════════════════════════╣"
+    echo "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com)${PURPLE}                     ║"
+    echo "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}              ║"
+    echo "╚════════════════════════════════════════════════╝${NC}\n"
 }
 
 function spinner() {
@@ -48,171 +37,82 @@ function spinner() {
     printf "\r\033[K"
 }
 
-function send_telegram() {
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Sending Telegram notification...${NC}"
-    local TEXT="
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>   🚀 AUTORESTORE NOTIFICATION 🚀</b>
-<b>     HOKAGE VPN RESTORE</b>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>🖥️ IP VPS  :</b> <code>$(curl -sS ipv4.icanhazip.com || echo "Unknown")</code>
-<b>📅 Date :</b> <code>$(date +"%Y-%m-%d")</code>
-<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>📦 Restored File:</b> <code>${backup_file}</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>Automatic restore process completed</code>
-<code>BY BOT : @RosyVpn</code>
-"
-    curl -s --max-time 10 -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && {
-        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Telegram notification sent${NC}"
-    } || {
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to send Telegram notification${NC}"
-    }
-}
-
-function find_latest_backup() {
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Searching for backup files...${NC}"
+function restore_item() {
+    local src="$RESTORE_DIR$1"
+    local dest=$1
     
-    # Find all backup files in root directory
-    local backup_files=($(ls -t /root/backup_*.zip 2>/dev/null))
-    
-    if [ ${#backup_files[@]} -eq 0 ]; then
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}No backup files found in /root directory${NC}"
-        echo -e "${WHITE}${DOT} ${ARROW} ${YELLOW}Please make sure backup files exist with naming pattern:${NC}"
-        echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}backup_IP_TIMESTAMP.zip${NC}"
-        exit 1
+    if [ -e "$src" ]; then
+        mkdir -p "$(dirname "$dest")"
+        cp -r "$src" "$dest" & spinner "Restore $dest" && {
+            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}$dest"
+            return 0
+        } || {
+            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed: $dest"
+            return 1
+        }
+    else
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Not in backup: $dest"
+        return 1
     fi
-    
-    # Select the most recent backup
-    local latest_backup="${backup_files[0]}"
-    
-    echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Found backup: ${CYAN}${latest_backup}${NC}"
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Backup created: ${WHITE}$(stat -c %y "${latest_backup}" 2>/dev/null || echo "unknown")${NC}"
-    
-    # Extract timestamp from filename
-    local timestamp=$(echo "${latest_backup}" | grep -oE '[0-9]{8}_[0-9]{6}')
-    local backup_date=$(echo "${timestamp}" | cut -d'_' -f1)
-    local backup_time=$(echo "${timestamp}" | cut -d'_' -f2 | sed 's/\(..\)\(..\)\(..\)/\1:\2:\3/')
-    
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Backup timestamp: ${WHITE}${backup_date} ${backup_time}${NC}"
-    
-    # Confirm restore
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${YELLOW}Do you want to restore from this backup?${NC}"
-    read -p "$(echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Type 'yes' to confirm: ${NC}")" confirm
-    
-    if [[ "${confirm,,}" != "yes" ]]; then
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Restore cancelled by user${NC}"
-        exit 0
-    fi
-    
-    backup_file="${latest_backup}"
 }
 
-function restore_files() {
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Starting restore process...${NC}"
-    
-    # Create temporary directory
-    local temp_dir="/tmp/backup_restore_$(date +%s)"
-    mkdir -p "${temp_dir}" || {
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to create temporary directory${NC}"
-        exit 1
-    }
-    
-    # Extract backup
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Extracting backup files...${NC}"
-    unzip -o "${backup_file}" -d "${temp_dir}" & spinner "Extracting" && {
-        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup extracted successfully${NC}"
-    } || {
-        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to extract backup file${NC}"
-        exit 1
-    }
-    
-    # Restore system files
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restoring system files...${NC}"
-    
-    local system_files=(
-        "etc/passwd"
-        "etc/group"
-        "etc/shadow"
-        "etc/gshadow"
-        "etc/crontab"
-    )
-    
-    for file in "${system_files[@]}"; do
-        if [ -f "${temp_dir}/${file}" ]; then
-            cp "${temp_dir}/${file}" "/${file}" & spinner "Restoring ${file}" && {
-                echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Restored: ${WHITE}${file}${NC}"
-            } || {
-                echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to restore: ${WHITE}${file}${NC}"
-            }
-        else
-            echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Backup file not found: ${WHITE}${file}${NC}"
-        fi
-    done
-    
-    # Restore directories
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restoring configuration files...${NC}"
-    
-    local config_dirs=(
-        "etc/xray"
-        "var/lib/kyt"
-        "var/www/html"
-    )
-    
-    for dir in "${config_dirs[@]}"; do
-        if [ -d "${temp_dir}/${dir}" ]; then
-            rsync -a "${temp_dir}/${dir}/" "/${dir}/" & spinner "Restoring ${dir}" && {
-                echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Restored: ${WHITE}${dir}${NC}"
-            } || {
-                echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to restore: ${WHITE}${dir}${NC}"
-            }
-        else
-            echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Backup directory not found: ${WHITE}${dir}${NC}"
-        fi
-    done
-    
-    # Cleanup temporary files
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Cleaning up temporary files...${NC}"
-    rm -rf "${temp_dir}" & spinner "Cleaning up" && {
-        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Cleanup completed${NC}"
-    } || {
-        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to clean up temporary files${NC}"
-    }
-}
-
-# ==========================================
-# MAIN SCRIPT
-# ==========================================
-
-# Initialize variables
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3 2>/dev/null || echo "")
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2 2>/dev/null || echo "")
-export URL="https://api.telegram.org/bot$KEY/sendMessage"
-
+# ================= MAIN SCRIPT =================
 display_header
 
-# Find and select latest backup
-find_latest_backup
+# Restore Items List (MUST match backup items)
+RESTORE_ITEMS=(
+    "/etc/passwd"
+    "/etc/group"
+    "/etc/shadow"
+    "/etc/gshadow"
+    "/etc/crontab"
+    "/etc/xray"
+    "/usr/local/etc/xray"
+    "/var/lib/kyt"
+    "/var/www/html"
+    # "/etc/v2ray"  # Uncomment if using V2Ray
+)
 
-# Restore files
-restore_files
+# Select latest backup
+RESTORE_FILE=$(ls -t /root/backup_*.zip | head -n1)
+[ -z "$RESTORE_FILE" ] && {
+    echo -e "${RED}No backup files found in /root!${NC}"
+    echo -e "${YELLOW}Please run backup first.${NC}"
+    exit 1
+}
 
-# Send Telegram notification
-[ -n "$CHATID" ] && [ -n "$KEY" ] && send_telegram
+RESTORE_DIR="/tmp/restore_$(date +%s)"
+mkdir -p "$RESTORE_DIR"
 
-# Display completion message
-display_header
-echo -e "${PURPLE}"
-echo -e "╔════════════════════════════════════════════════╗"
-echo -e "║        ${WHITE}🎉 AUTORESTORE COMPLETED SUCCESSFULLY! 🎉${PURPLE}     ║"
-echo -e "╠════════════════════════════════════════════════╣"
-echo -e "║ ${WHITE}Restored From: ${CYAN}${backup_file}${PURPLE} ║"
-echo -e "║ ${WHITE}Restored Items: ${CYAN}System config + Xray + Web${PURPLE}    ║"
-echo -e "║ ${WHITE}Restore Time: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}          ║"
-echo -e "╚════════════════════════════════════════════════╝${NC}"
+# Extract Backup
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Extracting Backup...${NC}"
+unzip -o "$RESTORE_FILE" -d "$RESTORE_DIR" > /dev/null 2>&1 & spinner "Extracting" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup extracted"
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Extraction failed!"
+    exit 1
+}
 
-echo -e "\n${WHITE}${DOT} ${CHECKMARK} ${GREEN}System restore process completed!${NC}"
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Consider restarting affected services.${NC}\n"
+# Restore Process
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restoring Files...${NC}"
+for item in "${RESTORE_ITEMS[@]}"; do
+    restore_item "$item"
+done
+
+# Cleanup
+rm -rf "$RESTORE_DIR"
+
+# Restart Services
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restarting Services...${NC}"
+systemctl restart xray > /dev/null 2>&1 && echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Xray restarted"
+systemctl restart nginx > /dev/null 2>&1 && echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Nginx restarted"
+
+# Final Output
+echo -e "\n${PURPLE}╔════════════════════════════════════════════════╗"
+echo "║          ${WHITE}✅ RESTORE COMPLETED SUCCESSFULLY ${PURPLE}      ║"
+echo "╠════════════════════════════════════════════════╣"
+echo "║ ${WHITE}Restored: ${CYAN}$(basename "$RESTORE_FILE")${PURPLE}               ║"
+echo "║ ${WHITE}Services: ${CYAN}xray nginx${PURPLE}                         ║"
+echo "╚════════════════════════════════════════════════╝${NC}"
 
 exit 0
