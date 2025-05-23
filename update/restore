@@ -1,0 +1,200 @@
+#!/bin/bash
+# ==========================================
+# HOKAGE VPN RESTORE SCRIPT
+# Telegram : https://t.me/hokagevpnpremium
+# ==========================================
+
+# Modern Color Palette
+RED='\033[1;91m'
+GREEN='\033[1;92m'
+YELLOW='\033[1;93m'
+BLUE='\033[1;94m'
+PURPLE='\033[1;95m'
+CYAN='\033[1;96m'
+WHITE='\033[1;97m'
+NC='\033[0m'
+
+# Animation Characters
+SPINNER=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
+CHECKMARK="✓"
+CROSSMARK="✗"
+ARROW="➜"
+DOT="•"
+
+# ==========================================
+# FUNCTIONS
+# ==========================================
+
+function display_header() {
+    clear
+    echo -e "${PURPLE}"
+    echo -e "╔════════════════════════════════════════════════╗"
+    echo -e "║           ${WHITE}🚀 HOKAGE VPN RESTORE SYSTEM 🚀${PURPLE}         ║"
+    echo -e "╠════════════════════════════════════════════════╣"
+    echo -e "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com || echo "Unknown")${PURPLE}               ║"
+    echo -e "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d") ${WHITE}| Time: ${CYAN}$(date +"%H:%M:%S") ${PURPLE}          ║"
+    echo -e "╚════════════════════════════════════════════════╝${NC}\n"
+}
+
+function spinner() {
+    local pid=$!
+    local delay=0.15
+    local i=0
+    while kill -0 $pid 2>/dev/null; do
+        i=$(( (i+1) %8 ))
+        printf "\r${CYAN}${SPINNER[$i]}${WHITE}  %s${NC}" "$1"
+        sleep $delay
+    done
+    printf "\r\033[K"
+}
+
+function send_telegram() {
+    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Sending Telegram notification...${NC}"
+    local TEXT="
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>   🚀 RESTORE NOTIFICATION 🚀</b>
+<b>     HOKAGE VPN RESTORE</b>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>🖥️ IP VPS  :</b> <code>$(curl -sS ipv4.icanhazip.com || echo "Unknown")</code>
+<b>📅 Date :</b> <code>$(date +"%Y-%m-%d")</code>
+<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>🔗 Backup Source:</b> <code>${backup_url}</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<code>Restore process completed successfully</code>
+<code>BY BOT : @RosyVpn</code>
+"
+    curl -s --max-time 10 -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && {
+        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Telegram notification sent${NC}"
+    } || {
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to send Telegram notification${NC}"
+    }
+}
+
+function validate_url() {
+    if [[ "$1" =~ ^https?:// ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function restore_files() {
+    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Restoring system files...${NC}"
+    
+    # Restore critical system files
+    critical_files=(
+        "passwd"
+        "group"
+        "shadow"
+        "gshadow"
+        "crontab"
+    )
+    
+    for file in "${critical_files[@]}"; do
+        if [ -f "backup/$file" ]; then
+            cp "backup/$file" "/etc/" & spinner "Restoring $file" && {
+                echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Restored: ${WHITE}$file${NC}"
+            } || {
+                echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to restore: ${WHITE}$file${NC}"
+            }
+        else
+            echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Backup file not found: ${WHITE}$file${NC}"
+        fi
+    done
+    
+    # Restore directories
+    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restoring directories...${NC}"
+    directories=(
+        "kyt"
+        "xray"
+        "html"
+    )
+    
+    for dir in "${directories[@]}"; do
+        if [ -d "backup/$dir" ]; then
+            cp -r "backup/$dir" "/${dir%/*}/" & spinner "Restoring $dir" && {
+                echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Restored: ${WHITE}$dir${NC}"
+            } || {
+                echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to restore: ${WHITE}$dir${NC}"
+            }
+        else
+            echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Backup directory not found: ${WHITE}$dir${NC}"
+        fi
+    done
+    
+    # Special handling for web directory
+    if [ -d "backup/html" ]; then
+        cp -r "backup/html" "/var/www/" & spinner "Restoring web files"
+    fi
+}
+
+# ==========================================
+# MAIN SCRIPT
+# ==========================================
+
+# Initialize variables
+CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3 2>/dev/null || echo "")
+KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2 2>/dev/null || echo "")
+export URL="https://api.telegram.org/bot$KEY/sendMessage"
+
+display_header
+
+# Get backup URL
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Please enter the backup file URL:${NC}"
+read -rp "Link: " backup_url
+
+# Validate URL
+if ! validate_url "$backup_url"; then
+    echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Invalid URL format. Please use http:// or https://${NC}"
+    exit 1
+fi
+
+# Download backup
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Downloading backup file...${NC}"
+wget -O backup.zip "$backup_url" & spinner "Downloading" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup downloaded successfully${NC}"
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to download backup file${NC}"
+    exit 1
+}
+
+# Extract backup
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Extracting backup files...${NC}"
+unzip -o backup.zip & spinner "Extracting" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup extracted successfully${NC}"
+    rm -f backup.zip
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to extract backup file${NC}"
+    exit 1
+}
+
+# Restore files
+restore_files
+
+# Send Telegram notification
+[ -n "$CHATID" ] && [ -n "$KEY" ] && send_telegram
+
+# Cleanup
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Cleaning up temporary files...${NC}"
+rm -rf backup backup.zip & spinner "Cleaning up" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Cleanup completed${NC}"
+} || {
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to clean up temporary files${NC}"
+}
+
+# Display completion message
+display_header
+echo -e "${PURPLE}"
+echo -e "╔════════════════════════════════════════════════╗"
+echo -e "║           ${WHITE}🎉 RESTORE COMPLETED SUCCESSFULLY! 🎉${PURPLE}      ║"
+echo -e "╠════════════════════════════════════════════════╣"
+echo -e "║ ${WHITE}Restored From: ${CYAN}${backup_url:0:40}...${PURPLE} ║"
+echo -e "║ ${WHITE}Restored Files: ${CYAN}System config + Xray + Web${PURPLE}     ║"
+echo -e "║ ${WHITE}Date/Time: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}          ║"
+echo -e "╚════════════════════════════════════════════════╝${NC}"
+
+echo -e "\n${WHITE}${DOT} ${CHECKMARK} ${GREEN}System restore process completed!${NC}"
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Please restart services if needed.${NC}\n"
+
+exit 0
