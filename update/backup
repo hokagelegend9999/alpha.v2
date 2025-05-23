@@ -1,39 +1,28 @@
 #!/bin/bash
 # ==========================================
-# HOKAGE VPN BACKUP SCRIPT - FIXED VERSION
-# Telegram : https://t.me/hokagevpnpremium
+# HOKAGE VPN BACKUP SYSTEM - FINAL VERSION
+# Telegram: https://t.me/hokagevpnpremium
 # ==========================================
 
-# Modern Color Palette
-RED='\033[1;91m'
-GREEN='\033[1;92m'
-YELLOW='\033[1;93m'
-BLUE='\033[1;94m'
-PURPLE='\033[1;95m'
-CYAN='\033[1;96m'
-WHITE='\033[1;97m'
-NC='\033[0m'
+# Color Palette
+RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'
+BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'
+WHITE='\033[1;97m'; NC='\033[0m'
 
-# Animation Characters
+# Animation
 SPINNER=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
-CHECKMARK="✓"
-CROSSMARK="✗"
-ARROW="➜"
-DOT="•"
+CHECKMARK="✓"; CROSSMARK="✗"; ARROW="➜"; DOT="•"
 
-# ==========================================
-# FUNCTIONS
-# ==========================================
-
+# ================= FUNCTIONS =================
 function display_header() {
     clear
     echo -e "${PURPLE}"
-    echo -e "╔════════════════════════════════════════════════╗"
-    echo -e "║           ${WHITE}🚀 HOKAGE VPN BACKUP SYSTEM 🚀${PURPLE}          ║"
-    echo -e "╠════════════════════════════════════════════════╣"
-    echo -e "║ ${WHITE}IP: ${CYAN}$IP ${WHITE}| Domain: ${CYAN}$domain ${PURPLE}               ║"
-    echo -e "║ ${WHITE}Date: ${CYAN}$date ${WHITE}| Time: ${CYAN}$(date +"%H:%M:%S") ${PURPLE}          ║"
-    echo -e "╚════════════════════════════════════════════════╝${NC}\n"
+    echo "╔════════════════════════════════════════════════╗"
+    echo "║           ${WHITE}🚀 HOKAGE VPN BACKUP SYSTEM 🚀${PURPLE}          ║"
+    echo "╠════════════════════════════════════════════════╣"
+    echo "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com)${PURPLE}                     ║"
+    echo "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}              ║"
+    echo "╚════════════════════════════════════════════════╝${NC}\n"
 }
 
 function spinner() {
@@ -48,208 +37,74 @@ function spinner() {
     printf "\r\033[K"
 }
 
-function cleanup() {
-    echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Cleaning up...${NC}"
-    rm -rf "$BACKUP_DIR" & spinner "Removing temporary files" && {
-        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Cleanup completed${NC}"
-    } || {
-        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to clean up temporary files${NC}"
-    }
-}
-
-function send_telegram() {
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Sending Telegram notification...${NC}"
-    local TEXT="
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>   🚀 BACKUP NOTIFICATION 🚀</b>
-<b>     HOKAGE VPN BACKUP</b>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>🖥️ IP VPS  :</b> <code>${IP}</code>
-<b>🌐 DOMAIN :</b> <code>${domain}</code>
-<b>📅 Date :</b> <code>$date</code>
-<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>📦 File :</b> <code>$BACKUP_FILE_NAME</code>
-<b>🔗 Link:</b> <code>$gd_link</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>Copy link to restore on new VPS</code>
-<code>BY BOT : @RosyVpn</code>
-"
-    curl -s --max-time 10 -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && {
-        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Telegram notification sent${NC}"
-    } || {
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to send Telegram notification${NC}"
-    }
-}
-
-function generate_gdrive_link() {
-    echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Generating Google Drive link...${NC}"
+function backup_item() {
+    local src=$1
+    local dest="$BACKUP_DIR$src"
     
-    # Method 1: Try rclone link first
-    local url=$(rclone link "dr:backup/$BACKUP_FILE_NAME" 2>/dev/null)
-    
-    # Method 2: If rclone link fails, try alternative method
-    if [ -z "$url" ] || [[ ! "$url" =~ "drive.google.com" ]]; then
-        local file_id=$(rclone lsjson "dr:backup/$BACKUP_FILE_NAME" | jq -r '.[0].ID' 2>/dev/null)
-        if [ -n "$file_id" ]; then
-            url="https://drive.google.com/uc?id=${file_id}&export=download"
-        fi
-    fi
-
-    # Method 3: Direct link format
-    if [ -z "$url" ]; then
-        url="https://drive.google.com/file/d/$(rclone lsjson "dr:backup/$BACKUP_FILE_NAME" | jq -r '.[0].ID')/view?usp=drivesdk"
-    fi
-
-    # Final validation
-    if [[ "$url" =~ "drive.google.com" ]]; then
-        gd_link="$url"
-        echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Google Drive link generated successfully${NC}"
-        echo -e "${CYAN}${gd_link}${NC}"
-        return 0
+    mkdir -p "$(dirname "$dest")"
+    if [ -e "$src" ]; then
+        cp -r "$src" "$dest" & spinner "Backup $src" && {
+            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}$src"
+            return 0
+        } || {
+            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed: $src"
+            return 1
+        }
     else
-        gd_link="Not available"
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to generate valid Google Drive link${NC}"
+        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Missing: $src"
         return 1
     fi
 }
 
-# ==========================================
-# MAIN SCRIPT
-# ==========================================
-
-# Initialize variables
-IP=$(curl -sS ipv4.icanhazip.com || echo "Unknown")
-domain=$(cat /etc/xray/domain 2>/dev/null || echo "No-domain")
-date=$(date +"%Y-%m-%d")
-timestamp=$(date +"%Y%m%d_%H%M%S")
-
-# Bot configuration
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3 2>/dev/null || echo "")
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2 2>/dev/null || echo "")
-export URL="https://api.telegram.org/bot$KEY/sendMessage"
-
+# ================= MAIN SCRIPT =================
 display_header
 
-# Backup configuration
-BACKUP_DIR="/root/backup_${timestamp}"
-BACKUP_FILE="/root/backup_${IP//./_}_${timestamp}.zip"
-BACKUP_FILE_NAME="backup_${IP//./_}_${timestamp}.zip"
+# Initialize
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_DIR="/root/backup_$TIMESTAMP"
+BACKUP_FILE="/root/backup_$(curl -sS ipv4.icanhazip.com | tr '.' '_')_$TIMESTAMP.zip"
 
-# Create backup directory
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Creating backup directory...${NC}"
-mkdir -p "$BACKUP_DIR" & spinner "Preparing workspace" && {
-    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Directory created: ${WHITE}$BACKUP_DIR${NC}"
-} || {
-    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to create directory${NC}"
-    exit 1
-}
+mkdir -p "$BACKUP_DIR"
 
-# Copy system files
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Copying system files...${NC}"
-important_files=(
+# Backup Items List (Edit according to your needs)
+BACKUP_ITEMS=(
     "/etc/passwd"
     "/etc/group"
     "/etc/shadow"
     "/etc/gshadow"
     "/etc/crontab"
-    "/etc/xray/config.json"
-    "/etc/v2ray/config.json"
+    "/etc/xray"               # Xray config
+    "/usr/local/etc/xray"     # Custom Xray config
+    "/var/lib/kyt"            # KYT data
+    "/var/www/html"           # Web files
+    # "/etc/v2ray"            # Uncomment if using V2Ray
 )
 
-for file in "${important_files[@]}"; do
-    if [ -f "$file" ]; then
-        cp "$file" "$BACKUP_DIR/" & spinner "Copying $(basename "$file")" && {
-            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Copied: ${WHITE}$(basename "$file")${NC}"
-        } || {
-            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to copy: ${WHITE}$(basename "$file")${NC}"
-        }
-    else
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}File not found: ${WHITE}$(basename "$file")${NC}"
-    fi
+# Backup Process
+echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Starting Backup...${NC}"
+for item in "${BACKUP_ITEMS[@]}"; do
+    backup_item "$item"
 done
 
-# Copy directories
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Copying directories...${NC}"
-directories=(
-    "/var/lib/kyt/"
-    "/etc/xray"
-    "/etc/v2ray"
-    "/var/www/html"
-    "/usr/local/etc/xray"
-)
-
-for dir in "${directories[@]}"; do
-    if [ -d "$dir" ]; then
-        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" & spinner "Copying $(basename "$dir")" && {
-            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Copied: ${WHITE}$(basename "$dir")${NC}"
-        } || {
-            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to copy: ${WHITE}$(basename "$dir")${NC}"
-        }
-    else
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Directory not found: ${WHITE}$(basename "$dir")${NC}"
-    fi
-done
-
-# Create ZIP archive
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Creating ZIP archive...${NC}"
-cd "$BACKUP_DIR" || {
-    echo -e "${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to enter backup directory${NC}"
-    exit 1
-}
-
-zip -r "$BACKUP_FILE" . > /dev/null 2>&1 & spinner "Compressing files" && {
-    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}ZIP created: ${WHITE}$BACKUP_FILE${NC}"
+# Compress Backup
+echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Compressing Backup...${NC}"
+cd "$BACKUP_DIR" || exit
+zip -r "$BACKUP_FILE" . > /dev/null 2>&1 & spinner "Compressing" && {
+    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup saved: ${WHITE}$BACKUP_FILE"
 } || {
-    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to create ZIP file${NC}"
+    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Compression failed!"
     exit 1
 }
-
-# Upload to Google Drive
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Uploading to Google Drive...${NC}"
-if command -v rclone &> /dev/null; then
-    rclone copy "$BACKUP_FILE" "dr:backup/" > /dev/null 2>&1 & spinner "Uploading to cloud" && {
-        echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Upload successful to Google Drive${NC}"
-        
-        # Generate Google Drive link
-        generate_gdrive_link
-        
-    } || {
-        echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed to upload to Google Drive${NC}"
-        gd_link="Not available"
-    }
-else
-    echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Rclone not installed, skipping Google Drive upload${NC}"
-    gd_link="Not available"
-fi
-
-# Send Telegram notification
-[ -n "$CHATID" ] && [ -n "$KEY" ] && send_telegram
-
-# Display summary
-display_header
-echo -e "${PURPLE}"
-echo -e "╔════════════════════════════════════════════════╗"
-echo -e "║                ${WHITE}🔍 BACKUP SUMMARY 🔍${PURPLE}               ║"
-echo -e "╠════════════════════════════════════════════════╣"
-echo -e "║ ${WHITE}IP Address   : ${CYAN}$IP${PURPLE}                        ║"
-echo -e "║ ${WHITE}Domain       : ${CYAN}$domain${PURPLE}                    ║"
-echo -e "║ ${WHITE}Backup File  : ${CYAN}$BACKUP_FILE_NAME${PURPLE}          ║"
-echo -e "║ ${WHITE}Backup Size  : ${CYAN}$(du -sh $BACKUP_FILE | cut -f1)${PURPLE}                ║"
-echo -e "║ ${WHITE}Date/Time    : ${CYAN}$date $(date +"%H:%M:%S")${PURPLE}          ║"
-echo -e "╚════════════════════════════════════════════════╝${NC}"
-
-echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Google Drive Link:${NC}"
-if [ "$gd_link" != "Not available" ]; then
-    echo -e "${GREEN}${gd_link}${NC}"
-else
-    echo -e "${RED}Link not available${NC}"
-fi
 
 # Cleanup
-cleanup
+rm -rf "$BACKUP_DIR"
 
-echo -e "\n${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup process completed successfully!${NC}"
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Local backup path: ${WHITE}$BACKUP_FILE${NC}\n"
+# Final Output
+echo -e "\n${PURPLE}╔════════════════════════════════════════════════╗"
+echo "║           ${WHITE}✅ BACKUP COMPLETED SUCCESSFULLY ${PURPLE}       ║"
+echo "╠════════════════════════════════════════════════╣"
+echo "║ ${WHITE}File: ${CYAN}$(basename "$BACKUP_FILE")${PURPLE}                     ║"
+echo "║ ${WHITE}Size: ${CYAN}$(du -sh "$BACKUP_FILE" | cut -f1)${PURPLE}                          ║"
+echo "╚════════════════════════════════════════════════╝${NC}"
 
 exit 0
