@@ -127,18 +127,5 @@ sudo systemctl status haproxy
 VPN ( SSTP + PPTP + L2TP )
 
 ```
-cd
-rm alpha2_update
-wget https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update && chmod +x alpha2_update && ./alpha2_update
-cd
-rm alpha2_update
-```
+wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2 && chmod +x vpn_update_alphav2 && ./vpn_update_alphav2
 
-FIX UPDATE
-
-```
-cd
-rm vpn_update_alphav2
-wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2 && ./vpn_update_alphav2 && chmod +x vpn_update_alphav2 && ./vpn_update_alphav2
-cd
-rm vpn_update_alphav2
