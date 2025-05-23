@@ -79,7 +79,7 @@ main_install() {
     cd /usr/local/sbin
     sudo rm -f vpn
     sudo rm -f backup
-    sudo rm -f backup
+    sudo rm -f restore
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/update/backup
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/update/restore
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
