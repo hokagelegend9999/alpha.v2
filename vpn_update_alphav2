@@ -1,94 +1,95 @@
 #!/bin/bash
 
 # VPN Installer AlphaV2
-# Eksekusi langsung tanpa pilihan menu
+# Complete package with automatic cleanup
 
-# Fungsi untuk tampilan header
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Animation characters
+SPINNER=('⣾' '⣽' '⣻' '⢿' '⡿' '⣟' '⣯' '⣷')
+
+# Show header
 show_header() {
     clear
-    echo -e "\e[1;36m"
+    echo -e "${BLUE}"
     echo "   ██╗   ██╗██████╗ ███╗   ██╗ █████╗ ██████╗ "
     echo "   ██║   ██║██╔══██╗████╗  ██║██╔══██╗██╔══██╗"
     echo "   ██║   ██║██████╔╝██╔██╗ ██║███████║██████╔╝"
     echo "   ██║   ██║██╔═══╝ ██║╚██╗██║██╔══██║██╔═══╝ "
     echo "   ╚██████╔╝██║     ██║ ╚████║██║  ██║██║     "
-    echo -e "    ╚═════╝ ╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     \e[0m"
-    echo -e "\e[1;33m------------------------------------------\e[0m"
-    echo -e "\e[1;32m       VPN INSTALLER - AUTO EXECUTION\e[0m"
-    echo -e "\e[1;33m------------------------------------------\e[0m"
+    echo -e "    ╚═════╝ ╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ${NC}"
+    echo -e "${YELLOW}------------------------------------------${NC}"
+    echo -e "${GREEN}       VPN INSTALLER - COMPLETE PACKAGE${NC}"
+    echo -e "${YELLOW}------------------------------------------${NC}"
     echo
 }
 
-# Fungsi progress bar animasi
-animated_progress() {
-    echo -ne "\e[1;34m["
+# Spinner animation
+spinner() {
     while true; do
-        for i in {1..20}; do
-            echo -ne "▓"
+        for i in "${SPINNER[@]}"; do
+            echo -ne "\r${BLUE}[${i}] ${YELLOW}Installing...${NC} "
             sleep 0.1
         done
-        echo -ne "]\r["
-        sleep 0.1
     done
 }
 
-# Fungsi utama
-main() {
-    show_header
-    
-    echo -e "\e[1;32mMemulai proses instalasi...\e[0m"
-    echo
-    
-    # Animasi progress bar di background
-    animated_progress &
-    ANIM_PID=$!
+# Main installation
+main_install() {
+    # Start spinner animation
+    spinner &
+    SPINNER_PID=$!
     
     # 1. Install PPTP/L2TP/SSTP
-    echo -e "\e[1;33m▶ Memulai instalasi PPTP/L2TP/SSTP...\e[0m"
+    echo -e "\n${YELLOW}▶ Installing PPTP/L2TP/SSTP...${NC}"
     cd
     rm -f installer-sstp.sh
     wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/installer-sstp.sh
     chmod +x installer-sstp.sh
     sudo ./installer-sstp.sh
     rm -f installer-sstp.sh
-    echo -e "\e[1;32m✔ PPTP/L2TP/SSTP berhasil diinstall\e[0m"
-    echo
+    echo -e "${GREEN}✔ PPTP/L2TP/SSTP installed successfully${NC}"
     
-    # 2. Install Update
-    echo -e "\e[1;33m▶ Memulai instalasi System Update...\e[0m"
+    # 2. Install System Updates
+    echo -e "\n${YELLOW}▶ Installing System Updates...${NC}"
     cd
     rm -f alpha2_update
     wget -q https://raw.githubusercontent.com/hokagelegend9999/update_alpha2/refs/heads/main/alpha2_update
     chmod +x alpha2_update
     ./alpha2_update
     rm -f alpha2_update
-    echo -e "\e[1;32m✔ System Update berhasil diinstall\e[0m"
-    echo
+    echo -e "${GREEN}✔ System Updates installed successfully${NC}"
     
-    # 3. Install Menu
-    echo -e "\e[1;33m▶ Memulai instalasi VPN Menu...\e[0m"
+    # 3. Install VPN Menu to /usr/local/sbin
+    echo -e "\n${YELLOW}▶ Installing VPN Menu to /usr/local/sbin...${NC}"
+    sudo mkdir -p /usr/local/sbin
     cd /usr/local/sbin
-    rm -f vpn
-    wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
+    sudo rm -f vpn
+    sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
     sudo chmod +x vpn
     cd
-    echo -e "\e[1;32m✔ VPN Menu berhasil diinstall\e[0m"
-    echo
+    echo -e "${GREEN}✔ VPN Menu installed to /usr/local/sbin/vpn${NC}"
     
-    # Hentikan animasi progress bar
-    kill $ANIM_PID
-    wait $ANIM_PID 2>/dev/null
+    # Stop spinner
+    kill $SPINNER_PID
+    wait $SPINNER_PID 2>/dev/null
     
-    echo -e "\e[1;36m------------------------------------------\e[0m"
-    echo -e "\e[1;32m✔ Semua instalasi selesai!\e[0m"
-    echo -e "\e[1;36m------------------------------------------\e[0m"
+    # Completion message
+    echo -e "\n${YELLOW}------------------------------------------${NC}"
+    echo -e "${GREEN}✔ All installations completed successfully!${NC}"
+    echo -e "${YELLOW}------------------------------------------${NC}"
     
     # Self-cleanup
-    echo -e "\n\e[1;33mMembersihkan file installer...\e[0m"
+    echo -e "\n${YELLOW}Cleaning up installer...${NC}"
     sleep 2
     rm -f "$0"
-    exit 0
 }
 
-# Jalankan fungsi utama
-main
+# Start installation
+show_header
+main_install
