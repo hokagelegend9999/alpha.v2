@@ -1,59 +1,108 @@
 #!/bin/bash
+# My Telegram : https://t.me/hokagevpnpremium
 # ==========================================
-# Color
-RED='\033[0;31m'
+# Modern Color Scheme
+RED='\033[1;31m'
 NC='\033[0m'
-GREEN='\033[0;32m'
-ORANGE='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-LIGHT='\033[0;37m'
+GREEN='\033[1;32m'
+ORANGE='\033[1;33m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
+CYAN='\033[1;36m'
+LIGHT='\033[1;37m'
+DARK='\033[1;30m'
+# ==========================================
+
+# Bot configuration
 CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
 KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
-clear
-function notif_restore() {
-    green "Notif AddHost Tele"
-    sleep 2
-    CHATID="$CHATID"
-KEY="$KEY"
-TIME="$TIME"
-URL="$URL"
-TEXT="
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>  ⚠️ RESTORE NOTIF⚠️</b>
-<b>     Detail Restore VPS</b>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>Restore Vps Done</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>BY BOT : https://t.me/hokagevpnpremium</code>
-"
 
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+# Function to display header
+display_header() {
+    clear
+    echo -e "${PURPLE}"
+    echo -e "╔══════════════════════════════════════════════╗"
+    echo -e "║          🛡️ VPS RESTORE SYSTEM 🛡️           ║"
+    echo -e "╠══════════════════════════════════════════════╣"
+    echo -e "║      Automated Restore from Backup File      ║"
+    echo -e "╚══════════════════════════════════════════════╝"
+    echo -e "${NC}"
 }
-# ==========================================
-# Getting
-clear
-echo "Silahkan Masukin Link Backupnya"
-read -rp "Link File: " -e url
-wget -O backup.zip "$url"
-unzip backup.zip
+
+# Function to send Telegram notification
+notif_restore() {
+    echo -e "${BLUE}🔹 Sending Telegram notification...${NC}"
+    TEXT="
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>  🔄 RESTORE NOTIFICATION 🔄</b>
+<b>     VPS Restore Details</b>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<code>✅ Restore Process Completed</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<code>🤖 Bot : https://t.me/hokagevpnpremium</code>
+"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    echo -e "${GREEN}✔ Telegram notification sent${NC}"
+}
+
+# Main restore process
+display_header
+echo -e "${GREEN}🔹 Please enter the backup file link${NC}"
+read -rp "🔗 Backup URL: " -e url
+
+echo -e "${BLUE}🔹 Downloading backup file...${NC}"
+wget -O backup.zip "$url" && echo -e "${GREEN}✔ Backup downloaded successfully${NC}" || {
+    echo -e "${RED}❌ Failed to download backup file${NC}"
+    exit 1
+}
+
+echo -e "${BLUE}🔹 Extracting backup files...${NC}"
+unzip -o backup.zip && echo -e "${GREEN}✔ Backup extracted successfully${NC}" || {
+    echo -e "${RED}❌ Failed to extract backup file${NC}"
+    exit 1
+}
+
 rm -f backup.zip
 sleep 1
-echo Start Restore
-cd /root/backup
-cp passwd /etc/
-cp group /etc/
-cp shadow /etc/
-cp gshadow /etc/
-cp -r kyt /var/lib/
-cp -r xray /etc/
-cp -r html /var/www/
-cp crontab /etc/
 
+echo -e "${PURPLE}⚙️ Starting restore process...${NC}"
+cd /root/backup || {
+    echo -e "${RED}❌ Backup directory not found${NC}"
+    exit 1
+}
+
+echo -e "${BLUE}🔹 Restoring system files...${NC}"
+cp passwd /etc/ && echo -e "${GREEN}✔ /etc/passwd restored${NC}"
+cp group /etc/ && echo -e "${GREEN}✔ /etc/group restored${NC}"
+cp shadow /etc/ && echo -e "${GREEN}✔ /etc/shadow restored${NC}"
+cp gshadow /etc/ && echo -e "${GREEN}✔ /etc/gshadow restored${NC}"
+cp crontab /etc/ && echo -e "${GREEN}✔ /etc/crontab restored${NC}"
+
+echo -e "${BLUE}🔹 Restoring directories...${NC}"
+cp -r kyt /var/lib/ && echo -e "${GREEN}✔ /var/lib/kyt restored${NC}"
+cp -r xray /etc/ && echo -e "${GREEN}✔ /etc/xray restored${NC}"
+cp -r html /var/www/ && echo -e "${GREEN}✔ /var/www/html restored${NC}"
+
+# Send notification
 notif_restore
+
+# Cleanup
+echo -e "${BLUE}🔹 Cleaning up temporary files...${NC}"
 rm -rf /root/backup
 rm -f backup.zip
-echo ""
+
+# Final output
+display_header
+echo -e "${GREEN}"
+echo -e "╔══════════════════════════════════════════════╗"
+echo -e "║             RESTORE COMPLETE                 ║"
+echo -e "╠══════════════════════════════════════════════╣"
+echo -e "║  ✅ All files and configurations restored     ║"
+echo -e "║  ✅ System should be fully functional        ║"
+echo -e "╚══════════════════════════════════════════════╝"
+echo -e "${NC}"
+echo -e "${GREEN}✔ Restore process completed successfully${NC}"
+echo -e "\n${ORANGE}Press Enter to continue...${NC}"
+read -p ""
