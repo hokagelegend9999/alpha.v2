@@ -21,60 +21,88 @@ clear
 IP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain)
 date=$(date +"%Y-%m-%d")
+backup_file="$IP-$date.zip"
 clear
-echo "Mohon Menunggu , Proses Backup sedang berlangsung !!"
+
+echo -e "${GREEN}Mohon Menunggu, Proses Backup sedang berlangsung!${NC}"
+echo ""
+
+# Create backup directory
 rm -rf /root/backup
-mkdir /root/backup
-cp /etc/passwd backup/
-cp /etc/group backup/
-cp /etc/shadow backup/
-cp /etc/gshadow backup/
-cp /etc/crontab backup/
-cp -r /var/lib/kyt/ backup/kyt 
-cp -r /etc/xray backup/xray
-cp -r /var/www/html/ backup/html
+mkdir -p /root/backup
+
+# Backup essential files
+echo -e "${CYAN}Membackup system files...${NC}"
+cp /etc/passwd /root/backup/
+cp /etc/group /root/backup/
+cp /etc/shadow /root/backup/
+cp /etc/gshadow /root/backup/
+cp /etc/crontab /root/backup/
+
+# Backup services
+echo -e "${CYAN}Membackup service configurations...${NC}"
+cp -r /var/lib/kyt/ /root/backup/kyt 
+cp -r /etc/xray /root/backup/xray
+cp -r /var/www/html/ /root/backup/html
+
+# Create zip archive
+echo -e "${CYAN}Membuat archive backup...${NC}"
 cd /root
-zip -r $IP-$date.zip backup > /dev/null 2>&1
+zip -r $backup_file backup > /dev/null 2>&1
+
+# Upload to Google Drive
+echo -e "${CYAN}Mengupload ke Google Drive...${NC}"
+rclone copy "/root/$backup_file" dr:backup/
+drive_link=$(rclone link dr:backup/"$backup_file")
 
 # Send ZIP file to Telegram
+echo -e "${CYAN}Mengupload ke Telegram...${NC}"
 curl -F chat_id="$CHATID" \
--F document=@"/root/$IP-$date.zip" \
+-F document=@"/root/$backup_file" \
 -F caption="Backup Data VPS
 IP: $IP
 Domain: $domain
-Tanggal: $date" \
-"https://api.telegram.org/bot$KEY/sendDocument" >/dev/null 2>&1
+Tanggal: $date
+Google Drive: $drive_link" \
+"$FILE_URL" >/dev/null 2>&1
 
+# Clean up
 rm -rf /root/backup
-rm -r /root/$IP-$date.zip
+rm -f "/root/$backup_file"
+
+# Send notification with Google Drive link
 clear
-CHATID="$CHATID"
-KEY="$KEY"
-TIME="$TIME"
-URL="$URL"
 TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>   ⚠️BACKUP NOTIF⚠️</b>
+<b>   ⚠️ BACKUP NOTIF ⚠️</b>
 <b>     Detail Backup VPS</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>IP VPS  :</b> <code>${IP} </code>
+<b>IP VPS  :</b> <code>${IP}</code>
 <b>DOMAIN :</b> <code>${domain}</code>
-<b>Tanggal : $date</b>
+<b>Tanggal :</b> <code>$date</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<code>File backup sudah dikirim ke Telegram</code>
-<code>Silahkan download file zip tersebut</code>
+<b>Google Drive Link:</b>
+<code>$drive_link</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<code>File backup sudah dikirim ke Telegram dan Google Drive</code>
 <code>BY BOT : @HOKAGEVPN</code>
 "
+
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-echo ""
+
+# Display summary
 clear
-echo -e "
-Detail Backup 
-==================================
-IP VPS        : $IP
-Tanggal       : $date
-==================================
-"
-echo "File backup sudah dikirim ke Telegram"
-echo "Silahkan download file zip tersebut"
+echo -e "${GREEN}==================================${NC}"
+echo -e "${GREEN}       BACKUP BERHASIL          ${NC}"
+echo -e "${GREEN}==================================${NC}"
+echo -e "IP VPS        : ${BLUE}$IP${NC}"
+echo -e "Domain        : ${BLUE}$domain${NC}"
+echo -e "Tanggal       : ${BLUE}$date${NC}"
+echo -e "${GREEN}==================================${NC}"
+echo -e "${CYAN}Link Google Drive:${NC}"
+echo -e "$drive_link"
+echo -e "${GREEN}==================================${NC}"
+echo -e "${GREEN}File backup telah dikirim ke:${NC}"
+echo -e "1. Telegram (sebagai file)"
+echo -e "2. Google Drive (link di atas)"
 echo ""
