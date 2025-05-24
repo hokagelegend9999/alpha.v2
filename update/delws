@@ -31,7 +31,9 @@ send_deletion_notification() {
 <code>Deleted On  : $(date +"%d %b %Y %H:%M:%S")</code>
 <code>☉——————————————————————————☉</code>
 <code>🚀 Server: $(hostname)</code>
-<code>📌 IP: $(curl -s ipinfo.io/ip)</code>"
+<code>📌 IP: $(curl -s ipinfo.io/ip)</code>
+<code>☉——————————————————————————☉</code>
+<code>☉SCRIPT BY : HOKAGE LEGEND☉</code>"
 
     curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
