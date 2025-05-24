@@ -235,9 +235,9 @@ kontol
 ;;
 12)
 clear
-wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2
-chmod +x vpn_update_alphav2
-./vpn_update_alphav2
+wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/update.sh
+chmod +x update.sh
+./update.sh
 ;;
 13)
 clear
