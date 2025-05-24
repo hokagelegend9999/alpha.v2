@@ -238,7 +238,7 @@ echo -e " ${blue}╭════════════════════
 echo -e " ${blue}│$NC$NC\033[41m             CONTACT SUPPORT / CS           $NC${blue}│$NC"
 echo -e " ${blue}╰════════════════════════════════════════════╯$NC"
 echo -e " ${blue}╭════════════════════════════════════════════╮$NC"
-echo -e " ${blue}│$NC Whatsapp            $blue= ${NC} 081931472448${NC}  "
+echo -e " ${blue}│$NC Whatsapp            $blue= ${NC} 087726917005${NC}  "
 echo -e " ${blue}╰════════════════════════════════════════════╯$NC"
 echo ""
 read -n 1 -s -r -p "Press any key to back on menu"
