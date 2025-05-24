@@ -1,164 +1,114 @@
 #!/bin/bash
-# My Telegram : https://t.me/hokagevpnpremium
+# Restore Script for HOKAGEVPN
 # ==========================================
-# Modern Color Scheme
-RED='\033[1;31m'
+# Color
+RED='\033[0;31m'
 NC='\033[0m'
-GREEN='\033[1;32m'
-ORANGE='\033[1;33m'
-BLUE='\033[1;34m'
-PURPLE='\033[1;35m'
-CYAN='\033[1;36m'
-LIGHT='\033[1;37m'
-DARK='\033[1;30m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+LIGHT='\033[0;37m'
 # ==========================================
 
-# Bot configuration
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
-export TIME="10"
-export URL="https://api.telegram.org/bot$KEY/sendMessage"
+clear
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${GREEN}          HOKAGE VPN RESTORE TOOL          ${NC}"
+echo -e "${GREEN}==========================================${NC}"
+echo ""
 
-# Function to display header
-display_header() {
-    clear
-    echo -e "${PURPLE}"
-    echo -e "╔══════════════════════════════════════════════╗"
-    echo -e "║          🛡️ VPS RESTORE SYSTEM 🛡️           ║"
-    echo -e "╠══════════════════════════════════════════════╣"
-    echo -e "║      Automated Restore from Backup File      ║"
-    echo -e "╚══════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
-
-# Function to send Telegram notification
-notif_restore() {
-    echo -e "${BLUE}🔹 Sending Telegram notification...${NC}"
-    IP=$(curl -sS ipv4.icanhazip.com)
-    TEXT="
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>  🔄 RESTORE NOTIFICATION 🔄</b>
-<b>     VPS Restore Details</b>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>🖥️ IP VPS  :</b> <code>${IP}</code>
-<b>📅 Date   :</b> <code>$(date +"%Y-%m-%d")</code>
-<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>✅ Restore Process Completed</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>🤖 Bot : https://t.me/hokagevpnpremium</code>
-"
-    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-    echo -e "${GREEN}✔ Telegram notification sent${NC}"
-}
-
-# Function to restore files with verification
-restore_file() {
-    local src=$1
-    local dest=$2
-    local desc=$3
-    
-    if [ -f "$src" ]; then
-        cp "$src" "$dest" && echo -e "${GREEN}✔ $desc restored${NC}" || echo -e "${RED}❌ Failed to restore $desc${NC}"
-    else
-        echo -e "${ORANGE}⚠ $desc not found in backup${NC}"
-    fi
-}
-
-# Function to restore directories with verification
-restore_dir() {
-    local src=$1
-    local dest=$2
-    local desc=$3
-    
-    if [ -d "$src" ]; then
-        # Remove existing directory if it exists
-        [ -d "$dest" ] && rm -rf "$dest"
-        cp -r "$src" "$dest" && echo -e "${GREEN}✔ $desc restored${NC}" || echo -e "${RED}❌ Failed to restore $desc${NC}"
-    else
-        echo -e "${ORANGE}⚠ $desc not found in backup${NC}"
-    fi
-}
-
-# Main restore process
-display_header
-echo -e "${GREEN}🔹 Please enter the backup file link${NC}"
-read -rp "🔗 Backup URL: " -e url
-
-echo -e "${BLUE}🔹 Downloading backup file...${NC}"
-if ! wget -O backup.zip "$url"; then
-    echo -e "${RED}❌ Failed to download backup file${NC}"
-    exit 1
+# Check if running as root
+if [ "$(id -u)" != "0" ]; then
+   echo -e "${RED}Error: This script must be run as root${NC}" 1>&2
+   exit 1
 fi
-echo -e "${GREEN}✔ Backup downloaded successfully${NC}"
 
-echo -e "${BLUE}🔹 Extracting backup files...${NC}"
-if ! unzip -o backup.zip; then
-    echo -e "${RED}❌ Failed to extract backup file${NC}"
-    rm -f backup.zip
-    exit 1
-fi
-echo -e "${GREEN}✔ Backup extracted successfully${NC}"
+# Ask for backup file
+echo -e "${ORANGE}Please enter the full path to your backup ZIP file:${NC}"
+read -p "Path: " backup_file
 
-rm -f backup.zip
-sleep 1
-
-echo -e "${PURPLE}⚙️ Starting restore process...${NC}"
-if [ ! -d "/root/backup" ]; then
-    echo -e "${RED}❌ Backup directory not found${NC}"
+# Verify backup file exists
+if [ ! -f "$backup_file" ]; then
+    echo -e "${RED}Error: Backup file not found!${NC}"
     exit 1
 fi
 
-cd /root/backup || exit 1
+# Ask for confirmation
+echo -e "${RED}WARNING: This will overwrite existing system files!${NC}"
+read -p "Are you sure you want to restore from this backup? (y/n) " confirm
+if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+    echo -e "${ORANGE}Restore cancelled.${NC}"
+    exit 0
+fi
 
-# Restore critical system files
-echo -e "${CYAN}🔸 Restoring system configuration files...${NC}"
-restore_file "passwd" "/etc/passwd" "User accounts"
-restore_file "group" "/etc/group" "User groups"
-restore_file "shadow" "/etc/shadow" "User passwords"
-restore_file "gshadow" "/etc/gshadow" "Group passwords"
-restore_file "crontab" "/etc/crontab" "Cron jobs"
+# Create temporary restore directory
+temp_dir="/root/restore_temp"
+mkdir -p "$temp_dir"
 
-# Restore important directories
-echo -e "${CYAN}🔸 Restoring application data...${NC}"
-restore_dir "kyt" "/var/lib/kyt" "kyt data"
-restore_dir "xray" "/etc/xray" "Xray configuration"
-restore_dir "html" "/var/www/html" "Web content"
+# Extract backup
+echo -e "${GREEN}Extracting backup file...${NC}"
+unzip -o "$backup_file" -d "$temp_dir" > /dev/null 2>&1
 
-# Restore additional files if they exist
-[ -f "/root/email" ] && restore_file "email" "/root/email" "Email configuration"
-[ -f "/etc/bot/.bot.db" ] && restore_file ".bot.db" "/etc/bot/.bot.db" "Bot configuration"
+if [ ! -d "$temp_dir/backup" ]; then
+    echo -e "${RED}Error: Invalid backup file structure!${NC}"
+    rm -rf "$temp_dir"
+    exit 1
+fi
+
+# Restore system files
+echo -e "${GREEN}Restoring system files...${NC}"
+cp "$temp_dir/backup/passwd" /etc/
+cp "$temp_dir/backup/group" /etc/
+cp "$temp_dir/backup/shadow" /etc/
+cp "$temp_dir/backup/gshadow" /etc/
+cp "$temp_dir/backup/crontab" /etc/
+
+# Restore xray configuration
+echo -e "${GREEN}Restoring Xray configuration...${NC}"
+if [ -d "$temp_dir/backup/xray" ]; then
+    rm -rf /etc/xray
+    cp -r "$temp_dir/backup/xray" /etc/
+fi
+
+# Restore web files
+echo -e "${GREEN}Restoring web files...${NC}"
+if [ -d "$temp_dir/backup/html" ]; then
+    rm -rf /var/www/html
+    cp -r "$temp_dir/backup/html" /var/www/
+fi
+
+# Restore kyt data
+echo -e "${GREEN}Restoring kyt data...${NC}"
+if [ -d "$temp_dir/backup/kyt" ]; then
+    rm -rf /var/lib/kyt
+    cp -r "$temp_dir/backup/kyt" /var/lib/
+fi
+
+# Clean up
+rm -rf "$temp_dir"
 
 # Set proper permissions
-echo -e "${BLUE}🔹 Setting correct permissions...${NC}"
+echo -e "${GREEN}Setting permissions...${NC}"
 chmod 644 /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/crontab
-chmod -R 755 /var/lib/kyt /etc/xray /var/www/html
+chmod -R 755 /etc/xray
+chown -R nobody:nogroup /etc/xray
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
 
-# Send notification
-notif_restore
-
-# Cleanup
-echo -e "${BLUE}🔹 Cleaning up temporary files...${NC}"
-rm -rf /root/backup
-rm -f backup.zip
-
-# Final output
-display_header
-echo -e "${GREEN}"
-echo -e "╔══════════════════════════════════════════════╗"
-echo -e "║             RESTORE COMPLETE                 ║"
-echo -e "╠══════════════════════════════════════════════╣"
-echo -e "║  ✅ All files and configurations restored     ║"
-echo -e "║  ✅ System should be fully functional        ║"
-echo -e "║  ✅ Permissions set correctly                ║"
-echo -e "╚══════════════════════════════════════════════╝"
-echo -e "${NC}"
-echo -e "${GREEN}✔ Restore process completed successfully${NC}"
-echo -e "\n${ORANGE}Press Enter to continue...${NC}"
-read -p ""
-
-# Suggest services that might need restarting
-echo -e "${CYAN}🔄 You may need to restart these services:${NC}"
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${GREEN}   RESTORE PROCESS COMPLETED SUCCESSFULLY  ${NC}"
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${ORANGE}Note: You may need to restart services manually:${NC}"
+echo -e "1. Xray services"
+echo -e "2. Web server (nginx/apache)"
+echo -e "3. Other affected services"
+echo ""
+echo -e "${GREEN}To restart Xray:${NC}"
 echo -e "systemctl restart xray"
-echo -e "systemctl restart cron"
-echo -e "systemctl restart nginx/apache2 (if applicable)"
+echo -e "systemctl restart xray@*"
+echo ""
+echo -e "${GREEN}To restart web server:${NC}"
+echo -e "systemctl restart nginx"
+echo -e "or"
+echo -e "systemctl restart apache2"
