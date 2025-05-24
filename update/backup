@@ -1,110 +1,185 @@
 #!/bin/bash
+# My Telegram : https://t.me/hokagevpnpremium
 # ==========================================
-# HOKAGE VPN BACKUP SYSTEM - FINAL VERSION
-# Telegram: https://t.me/hokagevpnpremium
+# Modern Color Scheme
+RED='\033[1;31m'
+NC='\033[0m'
+GREEN='\033[1;32m'
+ORANGE='\033[1;33m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
+CYAN='\033[1;36m'
+LIGHT='\033[1;37m'
+DARK='\033[1;30m'
 # ==========================================
 
-# Color Palette
-RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'
-BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'
-WHITE='\033[1;97m'; NC='\033[0m'
+# Function to display modern progress spinner
+spinner() {
+    local pid=$!
+    local delay=0.1
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " ${PURPLE}[%c]${NC}  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
 
-# Animation
-SPINNER=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
-CHECKMARK="✓"; CROSSMARK="✗"; ARROW="➜"; DOT="•"
-
-# ================= FUNCTIONS =================
-function display_header() {
+# Function to display header
+display_header() {
     clear
     echo -e "${PURPLE}"
-    echo "╔════════════════════════════════════════════════╗"
-    echo "║           ${WHITE}🚀 HOKAGE VPN BACKUP SYSTEM 🚀${PURPLE}          ║"
-    echo "╠════════════════════════════════════════════════╣"
-    echo "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com)${PURPLE}                     ║"
-    echo "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}              ║"
-    echo "╚════════════════════════════════════════════════╝${NC}\n"
+    echo -e "╔══════════════════════════════════════════════╗"
+    echo -e "║          🛡️ VPS BACKUP SYSTEM 🛡️           ║"
+    echo -e "╠══════════════════════════════════════════════╣"
+    echo -e "║      Automated Backup with Cloud Storage     ║"
+    echo -e "╚══════════════════════════════════════════════╝"
+    echo -e "${NC}"
 }
 
-function spinner() {
-    local pid=$!
-    local delay=0.15
-    local i=0
-    while kill -0 $pid 2>/dev/null; do
-        i=$(( (i+1) %8 ))
-        printf "\r${CYAN}${SPINNER[$i]}${WHITE}  %s${NC}" "$1"
-        sleep $delay
-    done
-    printf "\r\033[K"
-}
+# Getting bot info
+CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+export TIME="10"
+export URL="https://api.telegram.org/bot$KEY/sendMessage"
 
-function backup_item() {
-    local src=$1
-    local dest="$BACKUP_DIR$src"
-    
-    mkdir -p "$(dirname "$dest")"
-    if [ -e "$src" ]; then
-        cp -r "$src" "$dest" & spinner "Backup $src" && {
-            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}$src"
-            return 0
-        } || {
-            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed: $src"
-            return 1
-        }
-    else
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Missing: $src"
-        return 1
-    fi
-}
-
-# ================= MAIN SCRIPT =================
 display_header
+IP=$(curl -sS ipv4.icanhazip.com)
+domain=$(cat /etc/xray/domain)
+date=$(date +"%Y-%m-%d")
+timestamp=$(date +"%Y%m%d_%H%M%S")
 
-# Initialize
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_DIR="/root/backup_$TIMESTAMP"
-BACKUP_FILE="/root/backup_$(curl -sS ipv4.icanhazip.com | tr '.' '_')_$TIMESTAMP.zip"
+# Backup directory and file
+BACKUP_DIR="/root/backup_${timestamp}"
+BACKUP_FILE="/root/backup_${IP}_${timestamp}.zip"
+BACKUP_FILE_NAME="backup_${IP}_${timestamp}.zip"
 
-mkdir -p "$BACKUP_DIR"
+# Create backup directory
+echo -e "${BLUE}🔹 Creating backup directory...${NC}"
+mkdir -p "$BACKUP_DIR" || {
+    echo -e "${RED}❌ Failed to create backup directory${NC}"
+    exit 1
+}
 
-# Backup Items List (Edit according to your needs)
-BACKUP_ITEMS=(
+# Copy system files with progress
+echo -e "${BLUE}🔹 Copying system files...${NC}"
+important_files=(
     "/etc/passwd"
     "/etc/group"
     "/etc/shadow"
     "/etc/gshadow"
     "/etc/crontab"
-    "/etc/xray"               # Xray config
-    "/usr/local/etc/xray"     # Custom Xray config
-    "/var/lib/kyt"            # KYT data
-    "/var/www/html"           # Web files
-    # "/etc/v2ray"            # Uncomment if using V2Ray
 )
 
-# Backup Process
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Starting Backup...${NC}"
-for item in "${BACKUP_ITEMS[@]}"; do
-    backup_item "$item"
+for file in "${important_files[@]}"; do
+    if [ -f "$file" ]; then
+        cp "$file" "$BACKUP_DIR/" && echo -e "${GREEN}✔ Successfully copied $file${NC}" || echo -e "${RED}❌ Failed to copy $file${NC}"
+    else
+        echo -e "${ORANGE}⚠ File $file not found${NC}"
+    fi
 done
 
-# Compress Backup
-echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Compressing Backup...${NC}"
-cd "$BACKUP_DIR" || exit
-zip -r "$BACKUP_FILE" . > /dev/null 2>&1 & spinner "Compressing" && {
-    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup saved: ${WHITE}$BACKUP_FILE"
-} || {
-    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Compression failed!"
+# Copy directories
+echo -e "${BLUE}🔹 Copying directories...${NC}"
+directories=(
+    "/var/lib/kyt/"
+    "/etc/xray"
+    "/var/www/html/"
+)
+
+for dir in "${directories[@]}"; do
+    if [ -d "$dir" ]; then
+        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" && echo -e "${GREEN}✔ Successfully copied $dir${NC}" || echo -e "${RED}❌ Failed to copy $dir${NC}"
+    else
+        echo -e "${ORANGE}⚠ Directory $dir not found${NC}"
+    fi
+done
+
+# Create ZIP archive
+echo -e "${BLUE}🔹 Creating ZIP archive...${NC}"
+cd "$BACKUP_DIR" || {
+    echo -e "${RED}❌ Failed to enter backup directory${NC}"
     exit 1
 }
 
-# Cleanup
-rm -rf "$BACKUP_DIR"
+zip -r "$BACKUP_FILE" . > /dev/null 2>&1 &
+spinner
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Failed to create ZIP backup file${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✔ ZIP backup file created: $BACKUP_FILE${NC}"
+fi
 
-# Final Output
-echo -e "\n${PURPLE}╔════════════════════════════════════════════════╗"
-echo "║           ${WHITE}✅ BACKUP COMPLETED SUCCESSFULLY ${PURPLE}       ║"
-echo "╠════════════════════════════════════════════════╣"
-echo "║ ${WHITE}File: ${CYAN}$(basename "$BACKUP_FILE")${PURPLE}                     ║"
-echo "║ ${WHITE}Size: ${CYAN}$(du -sh "$BACKUP_FILE" | cut -f1)${PURPLE}                          ║"
-echo "╚════════════════════════════════════════════════╝${NC}"
+# Upload to Google Drive
+echo -e "${BLUE}🔹 Uploading to Google Drive...${NC}"
+rclone copy "$BACKUP_FILE" dr:backup/ > /dev/null 2>&1 &
+spinner
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Failed to upload backup to Google Drive${NC}"
+    echo -e "${ORANGE}🔹 Checking rclone configuration...${NC}"
+    rclone config show
+    exit 1
+else
+    echo -e "${GREEN}✔ Upload to Google Drive successful${NC}"
+fi
 
-exit 0
+# Get shareable link
+echo -e "${BLUE}🔹 Generating download link...${NC}"
+url=$(rclone link dr:backup/"$BACKUP_FILE_NAME" 2>/dev/null)
+if [[ "$url" =~ "id=" ]]; then
+    id=$(echo "$url" | grep -oP 'id=\K[^&]+')
+    link="https://drive.google.com/u/4/uc?id=${id}&export=download"
+    echo -e "${GREEN}✔ Backup link: $link${NC}"
+else
+    echo -e "${RED}❌ Failed to get Google Drive link${NC}"
+    link="Not available"
+fi
+
+# Send Telegram notification
+echo -e "${BLUE}🔹 Sending Telegram notification...${NC}"
+TEXT="
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>   🔄 BACKUP NOTIFICATION 🔄</b>
+<b>      VPS Backup Details</b>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>🖥️ IP VPS  :</b> <code>${IP} </code>
+<b>🌐 DOMAIN :</b> <code>${domain}</code>
+<b>📅 Date   :</b> <code>$date</code>
+<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>🗄️ Backup File :</b> <code>$BACKUP_FILE_NAME</code>
+<b>🔗 Backup Link:</b> <code>$link</code>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<code>Copy the link to restore on a new VPS</code>
+<code>🤖 Bot : @RosyVpn</code>
+"
+
+curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && echo -e "${GREEN}✔ Telegram notification sent${NC}" || echo -e "${RED}❌ Failed to send Telegram notification${NC}"
+
+# Clean up
+echo -e "${BLUE}🔹 Cleaning temporary directory...${NC}"
+rm -rf "$BACKUP_DIR" && echo -e "${GREEN}✔ Temporary directory cleaned${NC}" || echo -e "${RED}❌ Failed to clean temporary directory${NC}"
+
+# Display final information
+display_header
+echo -e "${GREEN}"
+echo -e "╔══════════════════════════════════════════════╗"
+echo -e "║               BACKUP COMPLETE                ║"
+echo -e "╠══════════════════════════════════════════════╣"
+echo -e "║  IP VPS        : $IP"
+echo -e "║  Backup File   : $BACKUP_FILE_NAME"
+echo -e "║  Backup Link   : $link"
+echo -e "║  Date          : $date"
+echo -e "║  Time          : $(date +"%H:%M:%S")"
+echo -e "║  Local Path    : $BACKUP_FILE"
+echo -e "╚══════════════════════════════════════════════╝"
+echo -e "${NC}"
+echo -e "${GREEN}✔ Backup file saved at: ${BACKUP_FILE}${NC}"
+echo -e "\n${ORANGE}Press Enter to continue...${NC}"
+read -p ""
+
+echo -e "${GREEN}Please copy the link to restore on a new VPS${NC}"
