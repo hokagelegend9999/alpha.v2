@@ -32,7 +32,7 @@ echo "  ╚████ ╔╝██║     ██║ ╚████║"
 echo "  ╚═════╝ ╚═╝     ╚═╝  ╚═══╝"
 echo -e "\033[0m"  # Reset color
     echo -e "${YELLOW}------------------------------------------${NC}"
-    echo -e "${GREEN}       VPN INSTALLER - COMPLETE PACKAGE${NC}"
+    echo -e "${GREEN}    UPDATE INSTALLER - COMPLETE PACKAGE    ${NC}"
     echo -e "${YELLOW}------------------------------------------${NC}"
     echo
 }
