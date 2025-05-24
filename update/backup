@@ -1,108 +1,116 @@
 #!/bin/bash
-# My Telegram : https://t.me/hokagevpnpremium
+# HOKAGEVPN Backup Script
+# Only sends Google Drive link to Telegram (no file upload)
 # ==========================================
-# Color
+# Color Codes
 RED='\033[0;31m'
-NC='\033[0m'
 GREEN='\033[0;32m'
-ORANGE='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-LIGHT='\033[0;37m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
 # ==========================================
-# Getting
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
-export TIME="10"
-export URL="https://api.telegram.org/bot$KEY/sendMessage"
-export FILE_URL="https://api.telegram.org/bot$KEY/sendDocument"
-clear
-IP=$(curl -sS ipv4.icanhazip.com)
-domain=$(cat /etc/xray/domain)
-date=$(date +"%Y-%m-%d")
-backup_file="$IP-$date.zip"
-clear
 
-echo -e "${GREEN}Mohon Menunggu, Proses Backup sedang berlangsung!${NC}"
-echo ""
+# Check requirements
+check_requirements() {
+    for cmd in rclone zip curl; do
+        if ! command -v $cmd &> /dev/null; then
+            echo -e "${RED}Error: $cmd is not installed${NC}"
+            exit 1
+        fi
+    done
+}
 
-# Create backup directory
-rm -rf /root/backup
-mkdir -p /root/backup
+# Get configuration
+get_config() {
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    [ -z "$CHATID" ] || [ -z "$KEY" ] && {
+        echo -e "${RED}Error: Telegram bot config not found${NC}"
+        exit 1
+    }
 
-# Backup essential files
-echo -e "${CYAN}Membackup system files...${NC}"
-cp /etc/passwd /root/backup/
-cp /etc/group /root/backup/
-cp /etc/shadow /root/backup/
-cp /etc/gshadow /root/backup/
-cp /etc/crontab /root/backup/
+    IP=$(curl -4 -sS icanhazip.com) || {
+        echo -e "${RED}Error: Failed to get IP address${NC}"
+        exit 1
+    }
+    
+    domain=$(cat /etc/xray/domain 2>/dev/null)
+    date=$(date +"%Y-%m-%d")
+    backup_file="backup-$IP-$date.zip"
+    temp_dir="/tmp/backup_$date"
+}
 
-# Backup services
-echo -e "${CYAN}Membackup service configurations...${NC}"
-cp -r /var/lib/kyt/ /root/backup/kyt 
-cp -r /etc/xray /root/backup/xray
-cp -r /var/www/html/ /root/backup/html
+# Create backup
+create_backup() {
+    echo -e "${YELLOW}Creating backup...${NC}"
+    
+    mkdir -p "$temp_dir" || {
+        echo -e "${RED}Error: Failed to create temp directory${NC}"
+        exit 1
+    }
 
-# Create zip archive
-echo -e "${CYAN}Membuat archive backup...${NC}"
-cd /root
-zip -r $backup_file backup > /dev/null 2>&1
+    # System files
+    cp -a /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/crontab "$temp_dir/"
 
-# Upload to Google Drive
-echo -e "${CYAN}Mengupload ke Google Drive...${NC}"
-rclone copy "/root/$backup_file" dr:backup/
-drive_link=$(rclone link dr:backup/"$backup_file")
+    # Service configurations
+    [ -d "/etc/xray" ] && cp -a /etc/xray "$temp_dir/"
+    [ -d "/var/lib/kyt" ] && cp -a /var/lib/kyt "$temp_dir/"
+    [ -d "/var/www/html" ] && cp -a /var/www/html "$temp_dir/"
 
-# Send ZIP file to Telegram
-echo -e "${CYAN}Mengupload ke Telegram...${NC}"
-curl -F chat_id="$CHATID" \
--F document=@"/root/$backup_file" \
--F caption="Backup Data VPS
-IP: $IP
-Domain: $domain
-Tanggal: $date
-Google Drive: $drive_link" \
-"$FILE_URL" >/dev/null 2>&1
+    # Compress
+    echo -e "${YELLOW}Compressing backup...${NC}"
+    if ! zip -rq "/root/$backup_file" "$temp_dir"; then
+        echo -e "${RED}Error: Failed to create zip file${NC}"
+        exit 1
+    fi
 
-# Clean up
-rm -rf /root/backup
-rm -f "/root/$backup_file"
+    rm -rf "$temp_dir"
+}
 
-# Send notification with Google Drive link
-clear
-TEXT="
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>   ⚠️ BACKUP NOTIF ⚠️</b>
-<b>     Detail Backup VPS</b>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>IP VPS  :</b> <code>${IP}</code>
-<b>DOMAIN :</b> <code>${domain}</code>
-<b>Tanggal :</b> <code>$date</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<b>Google Drive Link:</b>
+# Upload to Google Drive and get link
+upload_to_drive() {
+    echo -e "${YELLOW}Uploading to Google Drive...${NC}"
+    if ! rclone copy "/root/$backup_file" "dr:backup/"; then
+        echo -e "${RED}Error: Google Drive upload failed${NC}"
+        exit 1
+    fi
+    drive_link=$(rclone link "dr:backup/$backup_file")
+    [ -z "$drive_link" ] && {
+        echo -e "${RED}Error: Failed to get Google Drive link${NC}"
+        exit 1
+    }
+}
+
+# Send only Google Drive link to Telegram
+send_to_telegram() {
+    echo -e "${YELLOW}Sending notification to Telegram...${NC}"
+    
+    message="<b>HOKAGEVPN Backup Notification</b>
+<code>────────────────────</code>
+<b>🖥️ IP VPS:</b> <code>$IP</code>
+<b>🌐 Domain:</b> <code>${domain:-Not Set}</code>
+<b>📅 Date:</b> <code>$date</code>
+<code>────────────────────</code>
+<b>📥 Download Backup:</b>
 <code>$drive_link</code>
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>File backup sudah dikirim ke Telegram dan Google Drive</code>
-<code>BY BOT : @HOKAGEVPN</code>
-"
+<code>────────────────────</code>
+<i>Size: $(du -h "/root/$backup_file" | cut -f1)</i>"
 
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    curl -s -X POST "https://api.telegram.org/bot$KEY/sendMessage" \
+        -d chat_id="$CHATID" \
+        -d text="$message" \
+        -d parse_mode="HTML" >/dev/null || {
+        echo -e "${RED}Warning: Failed to send Telegram notification${NC}"
+    }
+}
 
-# Display summary
-clear
-echo -e "${GREEN}==================================${NC}"
-echo -e "${GREEN}       BACKUP BERHASIL          ${NC}"
-echo -e "${GREEN}==================================${NC}"
-echo -e "IP VPS        : ${BLUE}$IP${NC}"
-echo -e "Domain        : ${BLUE}$domain${NC}"
-echo -e "Tanggal       : ${BLUE}$date${NC}"
-echo -e "${GREEN}==================================${NC}"
-echo -e "${CYAN}Link Google Drive:${NC}"
-echo -e "$drive_link"
-echo -e "${GREEN}==================================${NC}"
-echo -e "${GREEN}File backup telah dikirim ke:${NC}"
-echo -e "1. Telegram (sebagai file)"
-echo -e "2. Google Drive (link di atas)"
-echo ""
+# Main execution
+check_requirements
+get_config
+create_backup
+upload_to_drive
+send_to_telegram
+
+# Cleanup and show result
+echo -e "${GREEN}Backup completed successfully!${NC}"
+echo -e "Backup file: ${GREEN}/root/$backup_file${NC}"
+echo -e "Google Drive: ${GREEN}$drive_link${NC}"
