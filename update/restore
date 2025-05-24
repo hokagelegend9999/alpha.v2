@@ -1,118 +1,146 @@
 #!/bin/bash
+# HOKAGEVPN RESTORE SCRIPT
 # ==========================================
-# HOKAGE VPN RESTORE SYSTEM - FINAL VERSION
-# Telegram: https://t.me/hokagevpnpremium
+# Color
+RED='\033[0;31m'
+NC='\033[0m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+LIGHT='\033[0;37m'
 # ==========================================
 
-# Color Palette
-RED='\033[1;91m'; GREEN='\033[1;92m'; YELLOW='\033[1;93m'
-BLUE='\033[1;94m'; PURPLE='\033[1;95m'; CYAN='\033[1;96m'
-WHITE='\033[1;97m'; NC='\033[0m'
+clear
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${GREEN}       HOKAGE VPN RESTORE TOOL         ${NC}"
+echo -e "${GREEN}==========================================${NC}"
+echo ""
 
-# Animation
-SPINNER=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
-CHECKMARK="✓"; CROSSMARK="✗"; ARROW="➜"; DOT="•"
+# Check root
+if [ "$(id -u)" != "0" ]; then
+   echo -e "${RED}Error: Script must be run as root${NC}" 1>&2
+   exit 1
+fi
 
-# ================= FUNCTIONS =================
-function display_header() {
-    clear
-    echo -e "${PURPLE}"
-    echo "╔════════════════════════════════════════════════╗"
-    echo "║          ${WHITE}🚀 HOKAGE VPN RESTORE SYSTEM 🚀${PURPLE}         ║"
-    echo "╠════════════════════════════════════════════════╣"
-    echo "║ ${WHITE}IP: ${CYAN}$(curl -sS ipv4.icanhazip.com)${PURPLE}                     ║"
-    echo "║ ${WHITE}Date: ${CYAN}$(date +"%Y-%m-%d %H:%M:%S")${PURPLE}              ║"
-    echo "╚════════════════════════════════════════════════╝${NC}\n"
-}
+# Restore source selection
+echo -e "${ORANGE}Select restore source:${NC}"
+echo "1) Local file in /root directory"
+echo "2) Google Drive download link"
+read -p "Choose option (1/2): " source_option
 
-function spinner() {
-    local pid=$!
-    local delay=0.15
-    local i=0
-    while kill -0 $pid 2>/dev/null; do
-        i=$(( (i+1) %8 ))
-        printf "\r${CYAN}${SPINNER[$i]}${WHITE}  %s${NC}" "$1"
-        sleep $delay
-    done
-    printf "\r\033[K"
-}
+case $source_option in
+    1)
+        # Local file restore
+        echo -e "${GREEN}Available backup files in /root:${NC}"
+        ls -lh /root/*.zip | awk '{print "- " $9 " (" $5 ")"}'
+        echo ""
+        read -p "Enter backup filename (e.g. backup-2023-01-01.zip): " backup_file
+        backup_path="/root/$backup_file"
+        ;;
+    2)
+        # Google Drive restore
+        read -p "Enter Google Drive share link: " drive_link
+        file_id=$(echo "$drive_link" | grep -o '[a-zA-Z0-9_-]\{28,\}')
+        if [ -z "$file_id" ]; then
+            echo -e "${RED}Invalid Google Drive link!${NC}"
+            exit 1
+        fi
+        backup_path="/root/restore_$file_id.zip"
+        echo -e "${GREEN}Downloading from Google Drive...${NC}"
+        wget --quiet --show-progress "https://drive.google.com/uc?export=download&id=$file_id" -O "$backup_path"
+        ;;
+    *)
+        echo -e "${RED}Invalid option!${NC}"
+        exit 1
+        ;;
+esac
 
-function restore_item() {
-    local src="$RESTORE_DIR$1"
-    local dest=$1
-    
-    if [ -e "$src" ]; then
-        mkdir -p "$(dirname "$dest")"
-        cp -r "$src" "$dest" & spinner "Restore $dest" && {
-            echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}$dest"
-            return 0
-        } || {
-            echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Failed: $dest"
-            return 1
-        }
-    else
-        echo -e "${WHITE}${DOT} ${CROSSMARK} ${YELLOW}Not in backup: $dest"
-        return 1
-    fi
-}
-
-# ================= MAIN SCRIPT =================
-display_header
-
-# Restore Items List (MUST match backup items)
-RESTORE_ITEMS=(
-    "/etc/passwd"
-    "/etc/group"
-    "/etc/shadow"
-    "/etc/gshadow"
-    "/etc/crontab"
-    "/etc/xray"
-    "/usr/local/etc/xray"
-    "/var/lib/kyt"
-    "/var/www/html"
-    # "/etc/v2ray"  # Uncomment if using V2Ray
-)
-
-# Select latest backup
-RESTORE_FILE=$(ls -t /root/backup_*.zip | head -n1)
-[ -z "$RESTORE_FILE" ] && {
-    echo -e "${RED}No backup files found in /root!${NC}"
-    echo -e "${YELLOW}Please run backup first.${NC}"
+# Verify backup file
+if [ ! -f "$backup_path" ]; then
+    echo -e "${RED}Backup file not found!${NC}"
     exit 1
-}
+fi
 
-RESTORE_DIR="/tmp/restore_$(date +%s)"
-mkdir -p "$RESTORE_DIR"
+# Confirmation
+echo -e "${RED}WARNING: This will overwrite existing system files!${NC}"
+read -p "Are you sure you want to proceed? (y/n) " confirm
+if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+    echo -e "${ORANGE}Restore cancelled.${NC}"
+    rm -f "$backup_path" 2>/dev/null
+    exit 0
+fi
 
-# Extract Backup
-echo -e "${WHITE}${DOT} ${ARROW} ${CYAN}Extracting Backup...${NC}"
-unzip -o "$RESTORE_FILE" -d "$RESTORE_DIR" > /dev/null 2>&1 & spinner "Extracting" && {
-    echo -e "\r${WHITE}${DOT} ${CHECKMARK} ${GREEN}Backup extracted"
-} || {
-    echo -e "\r${WHITE}${DOT} ${CROSSMARK} ${RED}Extraction failed!"
+# Create temp directory
+temp_dir="/root/restore_temp"
+mkdir -p "$temp_dir"
+
+# Extract backup
+echo -e "${GREEN}Extracting backup...${NC}"
+if ! unzip -o "$backup_path" -d "$temp_dir" >/dev/null 2>&1; then
+    echo -e "${RED}Error extracting backup file!${NC}"
+    rm -rf "$temp_dir"
     exit 1
+fi
+
+# Verify backup structure
+if [ ! -d "$temp_dir/backup" ]; then
+    echo -e "${RED}Invalid backup file structure!${NC}"
+    rm -rf "$temp_dir"
+    exit 1
+fi
+
+# Restore functions
+restore_system_files() {
+    echo -e "${GREEN}Restoring system files...${NC}"
+    cp "$temp_dir/backup/passwd" /etc/
+    cp "$temp_dir/backup/group" /etc/
+    cp "$temp_dir/backup/shadow" /etc/
+    cp "$temp_dir/backup/gshadow" /etc/
+    cp "$temp_dir/backup/crontab" /etc/
 }
 
-# Restore Process
-echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restoring Files...${NC}"
-for item in "${RESTORE_ITEMS[@]}"; do
-    restore_item "$item"
-done
+restore_xray() {
+    echo -e "${GREEN}Restoring Xray config...${NC}"
+    rm -rf /etc/xray
+    cp -r "$temp_dir/backup/xray" /etc/
+    chmod -R 755 /etc/xray
+    chown -R nobody:nogroup /etc/xray
+}
+
+restore_web() {
+    echo -e "${GREEN}Restoring web files...${NC}"
+    rm -rf /var/www/html
+    cp -r "$temp_dir/backup/html" /var/www/
+    chown -R www-data:www-data /var/www/html
+    chmod -R 755 /var/www/html
+}
+
+restore_kyt() {
+    echo -e "${GREEN}Restoring kyt data...${NC}"
+    rm -rf /var/lib/kyt
+    cp -r "$temp_dir/backup/kyt" /var/lib/
+}
+
+# Execute restores
+restore_system_files
+[ -d "$temp_dir/backup/xray" ] && restore_xray
+[ -d "$temp_dir/backup/html" ] && restore_web
+[ -d "$temp_dir/backup/kyt" ] && restore_kyt
 
 # Cleanup
-rm -rf "$RESTORE_DIR"
+rm -rf "$temp_dir"
+if [ "$source_option" -eq 2 ]; then
+    rm -f "$backup_path"
+fi
 
-# Restart Services
-echo -e "\n${WHITE}${DOT} ${ARROW} ${CYAN}Restarting Services...${NC}"
-systemctl restart xray > /dev/null 2>&1 && echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Xray restarted"
-systemctl restart nginx > /dev/null 2>&1 && echo -e "${WHITE}${DOT} ${CHECKMARK} ${GREEN}Nginx restarted"
-
-# Final Output
-echo -e "\n${PURPLE}╔════════════════════════════════════════════════╗"
-echo "║          ${WHITE}✅ RESTORE COMPLETED SUCCESSFULLY ${PURPLE}      ║"
-echo "╠════════════════════════════════════════════════╣"
-echo "║ ${WHITE}Restored: ${CYAN}$(basename "$RESTORE_FILE")${PURPLE}               ║"
-echo "║ ${WHITE}Services: ${CYAN}xray nginx${PURPLE}                         ║"
-echo "╚════════════════════════════════════════════════╝${NC}"
-
-exit 0
+# Completion
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${GREEN}   RESTORE COMPLETED SUCCESSFULLY   ${NC}"
+echo -e "${GREEN}==========================================${NC}"
+echo -e "${ORANGE}Recommended actions:${NC}"
+echo "1. Restart Xray: systemctl restart xray"
+echo "2. Restart web server: systemctl restart nginx/apache2"
+echo "3. Verify services are running properly"
+echo ""
