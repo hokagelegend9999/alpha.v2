@@ -74,18 +74,21 @@ main_install() {
     echo -e "${GREEN}✔ System Updates installed successfully${NC}"
     
     # 3. Install VPN Menu & Menu Backup to /usr/local/sbin
-    echo -e "\n${YELLOW}▶ Installing VPN Menu & BackUp to /usr/local/sbin...${NC}"
+    echo -e "\n${YELLOW}▶ Installing Data Menu Update /usr/local/sbin...${NC}"
     sudo mkdir -p /usr/local/sbin
     cd /usr/local/sbin
     sudo rm -f vpn
     sudo rm -f backup
     sudo rm -f restore
+    sudo rm -f delws
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/update/backup
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/update/restore
     sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/vpn/refs/heads/main/vpn
+    sudo wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/delws
     sudo chmod +x backup
     sudo chmod +x restore
     sudo chmod +x vpn
+    sudo chmod +x delws
     cd
     echo -e "${GREEN}✔ VPN Menu installed to /usr/local/sbin/vpn${NC}"
 
