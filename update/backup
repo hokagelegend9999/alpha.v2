@@ -1,259 +1,83 @@
 #!/bin/bash
 # My Telegram : https://t.me/hokagevpnpremium
 # ==========================================
-# Modern Color Scheme
-RED='\033[1;31m'
+# Color
+RED='\033[0;31m'
 NC='\033[0m'
-GREEN='\033[1;32m'
-ORANGE='\033[1;33m'
-BLUE='\033[1;34m'
-PURPLE='\033[1;35m'
-CYAN='\033[1;36m'
-LIGHT='\033[1;37m'
-DARK='\033[1;30m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+LIGHT='\033[0;37m'
 # ==========================================
-
-# Function to display modern progress spinner
-spinner() {
-    local pid=$!
-    local delay=0.1
-    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " ${PURPLE}[%c]${NC}  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
-}
-
-# Function to display header
-display_header() {
-    clear
-    echo -e "${PURPLE}"
-    echo -e "╔══════════════════════════════════════════════╗"
-    echo -e "║          🛡️ VPS BACKUP SYSTEM 🛡️            ║"
-    echo -e "╠══════════════════════════════════════════════╣"
-    echo -e "║      Comprehensive System Backup Utility     ║"
-    echo -e "╚══════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
-
-# Getting bot info
+# Getting
 CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
 KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
-
-display_header
+clear
 IP=$(curl -sS ipv4.icanhazip.com)
-domain=$(cat /etc/xray/domain 2>/dev/null)
+domain=$(cat /etc/xray/domain)
 date=$(date +"%Y-%m-%d")
-timestamp=$(date +"%Y%m%d_%H%M%S")
-
-# Backup configuration
-BACKUP_DIR="/root/backup_${timestamp}"
-BACKUP_FILE="/root/backup_${IP}_${timestamp}.zip"
-BACKUP_FILE_NAME="backup_${IP}_${timestamp}.zip"
-LOG_FILE="/root/backup_${timestamp}.log"
-
-# Create backup directory
-echo -e "${BLUE}🔹 Creating backup directory...${NC}"
-mkdir -p "$BACKUP_DIR" || {
-    echo -e "${RED}❌ Failed to create backup directory${NC}"
-    exit 1
-}
-
-# Start logging
-exec 3>&1 4>&2
-trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>"$LOG_FILE" 2>&1
-echo -e "Backup Log - $date $(date +"%H:%M:%S")"
-echo -e "===================================="
-
-# Function to backup files with verification
-backup_file() {
-    local src=$1
-    local desc=$2
-    
-    if [ -f "$src" ]; then
-        cp "$src" "$BACKUP_DIR/" && echo -e "${GREEN}✔ $desc backed up${NC}" || echo -e "${RED}❌ Failed to backup $desc${NC}"
-    else
-        echo -e "${ORANGE}⚠ $desc not found${NC}"
-    fi
-}
-
-# Function to backup directories with verification
-backup_dir() {
-    local src=$1
-    local desc=$2
-    
-    if [ -d "$src" ]; then
-        cp -r "$src" "$BACKUP_DIR/$(basename "$src")" && echo -e "${GREEN}✔ $desc backed up${NC}" || echo -e "${RED}❌ Failed to backup $desc${NC}"
-    else
-        echo -e "${ORANGE}⚠ $desc not found${NC}"
-    fi
-}
-
-# Main backup process
-echo -e "${CYAN}🔸 Backing up system configuration files...${NC}"
-backup_file "/etc/passwd" "User accounts"
-backup_file "/etc/group" "User groups"
-backup_file "/etc/shadow" "User passwords"
-backup_file "/etc/gshadow" "Group passwords"
-backup_file "/etc/crontab" "Cron jobs"
-backup_file "/etc/sudoers" "Sudo configuration"
-backup_file "/etc/hosts" "Hosts file"
-backup_file "/etc/resolv.conf" "DNS configuration"
-backup_file "/etc/ssh/sshd_config" "SSH configuration"
-backup_file "/root/.bashrc" "Root bashrc"
-backup_file "/root/.profile" "Root profile"
-
-# Backup network configuration
-echo -e "${CYAN}🔸 Backing up network configuration...${NC}"
-if [ -d "/etc/netplan" ]; then
-    backup_dir "/etc/netplan" "Netplan configuration"
+clear
+email=$(cat /root/email)
+if [[ "$email" = "" ]]; then
+echo "Masukkan Email Untuk Menerima Backup"
+read -rp "Email : " -e email
+cat <<EOF>>/root/email
+$email
+EOF
 fi
-backup_file "/etc/network/interfaces" "Network interfaces"
-
-# Backup services
-echo -e "${CYAN}🔸 Backing up service configurations...${NC}"
-backup_dir "/etc/systemd/system" "Systemd services"
-backup_dir "/etc/nginx" "Nginx configuration" 2>/dev/null
-backup_dir "/etc/apache2" "Apache configuration" 2>/dev/null
-
-# Backup application data
-echo -e "${CYAN}🔸 Backing up application data...${NC}"
-backup_dir "/var/lib/kyt/" "kyt data"
-backup_dir "/etc/xray" "Xray configuration"
-backup_dir "/var/www/html/" "Web content"
-backup_dir "/etc/openvpn" "OpenVPN configuration" 2>/dev/null
-backup_dir "/etc/wireguard" "WireGuard configuration" 2>/dev/null
-
-# Backup databases if exists
-echo -e "${CYAN}🔸 Backing up databases...${NC}"
-if command -v mysql &>/dev/null; then
-    echo -e "${BLUE}🔹 Backing up MySQL databases...${NC}"
-    mkdir -p "$BACKUP_DIR/mysql"
-    databases=$(mysql -e "SHOW DATABASES;" | grep -Ev "(Database|information_schema|performance_schema|mysql)")
-    for db in $databases; do
-        mysqldump --complete-insert --routines --triggers --single-transaction "$db" > "$BACKUP_DIR/mysql/$db.sql" && \
-        echo -e "${GREEN}✔ MySQL database $db backed up${NC}" || \
-        echo -e "${RED}❌ Failed to backup MySQL database $db${NC}"
-    done
-fi
-
-if command -v psql &>/dev/null; then
-    echo -e "${BLUE}🔹 Backing up PostgreSQL databases...${NC}"
-    mkdir -p "$BACKUP_DIR/postgresql"
-    databases=$(psql -l -t | cut -d'|' -f1 | sed -e 's/ //g' -e '/^$/d' | grep -vE "(template[0-9]|postgres)")
-    for db in $databases; do
-        pg_dump "$db" > "$BACKUP_DIR/postgresql/$db.sql" && \
-        echo -e "${GREEN}✔ PostgreSQL database $db backed up${NC}" || \
-        echo -e "${RED}❌ Failed to backup PostgreSQL database $db${NC}"
-    done
-fi
-
-# Backup additional important files
-echo -e "${CYAN}🔸 Backing up additional important files...${NC}"
-backup_file "/root/email" "Email configuration"
-backup_dir "/etc/bot" "Bot configuration"
-backup_file "/etc/v2ray/config.json" "V2Ray configuration" 2>/dev/null
-backup_file "/etc/trojan-go/config.json" "Trojan-Go configuration" 2>/dev/null
-backup_file "/etc/shadowsocks-libev/config.json" "Shadowsocks configuration" 2>/dev/null
-
-# Create ZIP archive
-echo -e "${BLUE}🔹 Creating compressed backup archive...${NC}"
-cd "$BACKUP_DIR" || {
-    echo -e "${RED}❌ Failed to enter backup directory${NC}"
-    exit 1
-}
-
-zip -r "$BACKUP_FILE" . > /dev/null 2>&1 &
-spinner
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to create ZIP backup file${NC}"
-    exit 1
-else
-    echo -e "${GREEN}✔ ZIP backup file created: $BACKUP_FILE${NC}"
-    filesize=$(du -sh "$BACKUP_FILE" | cut -f1)
-    echo -e "${BLUE}🔹 Backup size: $filesize${NC}"
-fi
-
-# Upload to Google Drive
-echo -e "${BLUE}🔹 Uploading to Google Drive...${NC}"
-rclone copy "$BACKUP_FILE" dr:backup/ > /dev/null 2>&1 &
-spinner
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to upload backup to Google Drive${NC}"
-    echo -e "${ORANGE}🔹 Checking rclone configuration...${NC}"
-    rclone config show
-    exit 1
-else
-    echo -e "${GREEN}✔ Upload to Google Drive successful${NC}"
-fi
-
-# Get shareable link
-echo -e "${BLUE}🔹 Generating download link...${NC}"
-url=$(rclone link dr:backup/"$BACKUP_FILE_NAME" 2>/dev/null)
-if [[ "$url" =~ "id=" ]]; then
-    id=$(echo "$url" | grep -oP 'id=\K[^&]+')
-    link="https://drive.google.com/u/4/uc?id=${id}&export=download"
-    echo -e "${GREEN}✔ Backup link: $link${NC}"
-else
-    echo -e "${RED}❌ Failed to get Google Drive link${NC}"
-    link="Not available"
-fi
-
-# Send Telegram notification
-echo -e "${BLUE}🔹 Sending Telegram notification...${NC}"
+clear
+echo "Mohon Menunggu , Proses Backup sedang berlangsung !!"
+rm -rf /root/backup
+mkdir /root/backup
+cp /etc/passwd backup/
+cp /etc/group backup/
+cp /etc/shadow backup/
+cp /etc/gshadow backup/
+cp /etc/crontab backup/
+cp -r /var/lib/kyt/ backup/kyt 
+cp -r /etc/xray backup/xray
+cp -r /var/www/html/ backup/html
+cd /root
+zip -r $IP-$date.zip backup > /dev/null 2>&1
+rclone copy /root/$IP-$date.zip dr:backup/
+url=$(rclone link dr:backup/$IP-$date.zip)
+id=(`echo $url | grep '^https' | cut -d'=' -f2`)
+link="https://drive.google.com/u/4/uc?id=${id}&export=download"
+rm -rf /root/backup
+rm -r /root/$IP-$date.zip
+clear
+CHATID="$CHATID"
+KEY="$KEY"
+TIME="$TIME"
+URL="$URL"
 TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>   🔄 BACKUP NOTIFICATION 🔄</b>
-<b>      VPS Backup Details</b>
+<b>   ⚠️BACKUP NOTIF⚠️</b>
+<b>     Detail Backup VPS</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>🖥️ IP VPS  :</b> <code>${IP}</code>
-<b>🌐 DOMAIN :</b> <code>${domain}</code>
-<b>📅 Date   :</b> <code>$date</code>
-<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
-<b>📦 Size   :</b> <code>$filesize</code>
+<b>IP VPS  :</b> <code>${IP} </code>
+<b>DOMAIN :</b> <code>${domain}</code>
+<b>Tanggal : $date</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>🗄️ Backup File :</b> <code>$BACKUP_FILE_NAME</code>
-<b>🔗 Backup Link:</b> <code>$link</code>
+<b>Link Backup   :</b> $link
 <code>◇━━━━━━━━━━━━━━◇</code>
-<code>✅ Backup completed successfully</code>
-<code>🤖 Bot : @RosyVpn</code>
+<code>Silahkan copy Link dan restore di VPS baru</code>
+<code>BY BOT : @HOKAGEVPN</code>
 "
-
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && \
-echo -e "${GREEN}✔ Telegram notification sent${NC}" || \
-echo -e "${RED}❌ Failed to send Telegram notification${NC}"
-
-# Clean up
-echo -e "${BLUE}🔹 Cleaning temporary files...${NC}"
-rm -rf "$BACKUP_DIR" && \
-echo -e "${GREEN}✔ Temporary files cleaned${NC}" || \
-echo -e "${RED}❌ Failed to clean temporary files${NC}"
-
-# Display final information
-display_header
-echo -e "${GREEN}"
-echo -e "╔══════════════════════════════════════════════╗"
-echo -e "║               BACKUP COMPLETE                ║"
-echo -e "╠══════════════════════════════════════════════╣"
-echo -e "║  IP VPS        : $IP"
-echo -e "║  Domain        : ${domain:-Not configured}"
-echo -e "║  Backup File   : $BACKUP_FILE_NAME"
-echo -e "║  Backup Size   : $filesize"
-echo -e "║  Backup Link   : $link"
-echo -e "║  Date          : $date"
-echo -e "║  Time          : $(date +"%H:%M:%S")"
-echo -e "║  Local Path    : $BACKUP_FILE"
-echo -e "╚══════════════════════════════════════════════╝"
-echo -e "${NC}"
-echo -e "${GREEN}✔ Backup file saved at: ${BACKUP_FILE}${NC}"
-echo -e "\n${ORANGE}Press Enter to continue...${NC}"
-read -p ""
-
-echo -e "${GREEN}Please copy the link to restore on a new VPS${NC}"
+curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+echo ""
+clear
+echo -e "
+Detail Backup 
+==================================
+IP VPS        : $IP
+Link Backup   : $link
+Tanggal       : $date
+==================================
+"
+echo "Silahkan copy Link dan restore di VPS baru"
+echo ""
