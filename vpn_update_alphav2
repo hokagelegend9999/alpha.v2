@@ -88,7 +88,10 @@ main_install() {
     sudo chmod +x vpn
     cd
     echo -e "${GREEN}✔ VPN Menu installed to /usr/local/sbin/vpn${NC}"
-    
+    # 4. echo -e "\n${YELLOW}▶ Installing dos2unix...${NC}"
+    sudo apt-get install dos2unix -y
+    sudo dos2unix /usr/local/sbin/backup
+    sudo dos2unix /usr/local/sbin/restore
     # Stop spinner
     kill $SPINNER_PID
     wait $SPINNER_PID 2>/dev/null
