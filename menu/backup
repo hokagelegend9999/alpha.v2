@@ -185,7 +185,7 @@ TEXT="
 <b>Link Backup:</b> <code>$link</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>Silahkan copy Link dan restore di VPS baru</code>
-<code>BY BOT : @RosyVpn</code>
+<code>BY BOT :@HookageLegend</code>
 "
 
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && echo -e "${GREEN}Notifikasi Telegram terkirim${NC}" || echo -e "${RED}Gagal mengirim notifikasi Telegram${NC}"
