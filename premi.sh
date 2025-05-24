@@ -325,7 +325,7 @@ TIMEZONE=$(printf '%(%H:%M:%S)T')
 <code>User     :</code><code>$username</code>
 <code>ISP      :</code><code>$ISP</code>
 <code>CITY     :</code><code>$CITY</code>
-<code>IP       :</code><code>$CITY</code>
+<code>IP       :</code><code>$IP</code>
 <code>DATE     :</code><code>$DATE</code>
 <code>Time     :</code><code>$TIMEZONE</code>
 <code>Exp Sc.  :</code><code>$exp</code>
