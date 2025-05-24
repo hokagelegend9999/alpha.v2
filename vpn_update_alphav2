@@ -92,7 +92,12 @@ main_install() {
     # Stop spinner
     kill $SPINNER_PID
     wait $SPINNER_PID 2>/dev/null
-    
+    4. Install BACKUP & RESTORE /usr/local/sbin
+    sudo apt-get install dos2unix -y
+    sudo dos2unix /usr/local/sbin/backup
+    sudo dos2unix /usr/local/sbin/restore
+     cd
+    echo -e "${GREEN}✔ BACKUP & RESTORE /usr/local/sbin/backup&restore${NC}"
     # Completion message
     echo -e "\n${YELLOW}------------------------------------------${NC}"
     echo -e "${GREEN}✔ All installations completed successfully!${NC}"
