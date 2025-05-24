@@ -1,5 +1,5 @@
 #!/bin/bash
-# Restore Script for HOKAGEVPN
+# HOKAGEVPN RESTORE SCRIPT
 # ==========================================
 # Color
 RED='\033[0;31m'
@@ -14,101 +14,133 @@ LIGHT='\033[0;37m'
 
 clear
 echo -e "${GREEN}==========================================${NC}"
-echo -e "${GREEN}          HOKAGE VPN RESTORE TOOL          ${NC}"
+echo -e "${GREEN}       HOKAGE VPN RESTORE TOOL         ${NC}"
 echo -e "${GREEN}==========================================${NC}"
 echo ""
 
-# Check if running as root
+# Check root
 if [ "$(id -u)" != "0" ]; then
-   echo -e "${RED}Error: This script must be run as root${NC}" 1>&2
+   echo -e "${RED}Error: Script must be run as root${NC}" 1>&2
    exit 1
 fi
 
-# Ask for backup file
-echo -e "${ORANGE}Please enter the full path to your backup ZIP file:${NC}"
-read -p "Path: " backup_file
+# Restore source selection
+echo -e "${ORANGE}Select restore source:${NC}"
+echo "1) Local file in /root directory"
+echo "2) Google Drive download link"
+read -p "Choose option (1/2): " source_option
 
-# Verify backup file exists
-if [ ! -f "$backup_file" ]; then
-    echo -e "${RED}Error: Backup file not found!${NC}"
+case $source_option in
+    1)
+        # Local file restore
+        echo -e "${GREEN}Available backup files in /root:${NC}"
+        ls -lh /root/*.zip | awk '{print "- " $9 " (" $5 ")"}'
+        echo ""
+        read -p "Enter backup filename (e.g. backup-2023-01-01.zip): " backup_file
+        backup_path="/root/$backup_file"
+        ;;
+    2)
+        # Google Drive restore
+        read -p "Enter Google Drive share link: " drive_link
+        file_id=$(echo "$drive_link" | grep -o '[a-zA-Z0-9_-]\{28,\}')
+        if [ -z "$file_id" ]; then
+            echo -e "${RED}Invalid Google Drive link!${NC}"
+            exit 1
+        fi
+        backup_path="/root/restore_$file_id.zip"
+        echo -e "${GREEN}Downloading from Google Drive...${NC}"
+        wget --quiet --show-progress "https://drive.google.com/uc?export=download&id=$file_id" -O "$backup_path"
+        ;;
+    *)
+        echo -e "${RED}Invalid option!${NC}"
+        exit 1
+        ;;
+esac
+
+# Verify backup file
+if [ ! -f "$backup_path" ]; then
+    echo -e "${RED}Backup file not found!${NC}"
     exit 1
 fi
 
-# Ask for confirmation
+# Confirmation
 echo -e "${RED}WARNING: This will overwrite existing system files!${NC}"
-read -p "Are you sure you want to restore from this backup? (y/n) " confirm
+read -p "Are you sure you want to proceed? (y/n) " confirm
 if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
     echo -e "${ORANGE}Restore cancelled.${NC}"
+    rm -f "$backup_path" 2>/dev/null
     exit 0
 fi
 
-# Create temporary restore directory
+# Create temp directory
 temp_dir="/root/restore_temp"
 mkdir -p "$temp_dir"
 
 # Extract backup
-echo -e "${GREEN}Extracting backup file...${NC}"
-unzip -o "$backup_file" -d "$temp_dir" > /dev/null 2>&1
-
-if [ ! -d "$temp_dir/backup" ]; then
-    echo -e "${RED}Error: Invalid backup file structure!${NC}"
+echo -e "${GREEN}Extracting backup...${NC}"
+if ! unzip -o "$backup_path" -d "$temp_dir" >/dev/null 2>&1; then
+    echo -e "${RED}Error extracting backup file!${NC}"
     rm -rf "$temp_dir"
     exit 1
 fi
 
-# Restore system files
-echo -e "${GREEN}Restoring system files...${NC}"
-cp "$temp_dir/backup/passwd" /etc/
-cp "$temp_dir/backup/group" /etc/
-cp "$temp_dir/backup/shadow" /etc/
-cp "$temp_dir/backup/gshadow" /etc/
-cp "$temp_dir/backup/crontab" /etc/
+# Verify backup structure
+if [ ! -d "$temp_dir/backup" ]; then
+    echo -e "${RED}Invalid backup file structure!${NC}"
+    rm -rf "$temp_dir"
+    exit 1
+fi
 
-# Restore xray configuration
-echo -e "${GREEN}Restoring Xray configuration...${NC}"
-if [ -d "$temp_dir/backup/xray" ]; then
+# Restore functions
+restore_system_files() {
+    echo -e "${GREEN}Restoring system files...${NC}"
+    cp "$temp_dir/backup/passwd" /etc/
+    cp "$temp_dir/backup/group" /etc/
+    cp "$temp_dir/backup/shadow" /etc/
+    cp "$temp_dir/backup/gshadow" /etc/
+    cp "$temp_dir/backup/crontab" /etc/
+}
+
+restore_xray() {
+    echo -e "${GREEN}Restoring Xray config...${NC}"
     rm -rf /etc/xray
     cp -r "$temp_dir/backup/xray" /etc/
-fi
+    chmod -R 755 /etc/xray
+    chown -R nobody:nogroup /etc/xray
+}
 
-# Restore web files
-echo -e "${GREEN}Restoring web files...${NC}"
-if [ -d "$temp_dir/backup/html" ]; then
+restore_web() {
+    echo -e "${GREEN}Restoring web files...${NC}"
     rm -rf /var/www/html
     cp -r "$temp_dir/backup/html" /var/www/
-fi
+    chown -R www-data:www-data /var/www/html
+    chmod -R 755 /var/www/html
+}
 
-# Restore kyt data
-echo -e "${GREEN}Restoring kyt data...${NC}"
-if [ -d "$temp_dir/backup/kyt" ]; then
+restore_kyt() {
+    echo -e "${GREEN}Restoring kyt data...${NC}"
     rm -rf /var/lib/kyt
     cp -r "$temp_dir/backup/kyt" /var/lib/
+}
+
+# Execute restores
+restore_system_files
+[ -d "$temp_dir/backup/xray" ] && restore_xray
+[ -d "$temp_dir/backup/html" ] && restore_web
+[ -d "$temp_dir/backup/kyt" ] && restore_kyt
+
+# Cleanup
+rm -rf "$temp_dir"
+if [ "$source_option" -eq 2 ]; then
+    rm -f "$backup_path"
 fi
 
-# Clean up
-rm -rf "$temp_dir"
-
-# Set proper permissions
-echo -e "${GREEN}Setting permissions...${NC}"
-chmod 644 /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/crontab
-chmod -R 755 /etc/xray
-chown -R nobody:nogroup /etc/xray
-chown -R www-data:www-data /var/www/html
-chmod -R 755 /var/www/html
-
+# Completion
 echo -e "${GREEN}==========================================${NC}"
-echo -e "${GREEN}   RESTORE PROCESS COMPLETED SUCCESSFULLY  ${NC}"
+echo -e "${GREEN}   RESTORE COMPLETED SUCCESSFULLY   ${NC}"
 echo -e "${GREEN}==========================================${NC}"
-echo -e "${ORANGE}Note: You may need to restart services manually:${NC}"
-echo -e "1. Xray services"
-echo -e "2. Web server (nginx/apache)"
-echo -e "3. Other affected services"
+echo -e "${ORANGE}Recommended actions:${NC}"
+echo "1. Restart Xray: systemctl restart xray"
+echo "2. Restart web server: systemctl restart nginx/apache2"
+echo "3. Verify services are running properly"
 echo ""
-echo -e "${GREEN}To restart Xray:${NC}"
-echo -e "systemctl restart xray"
-echo -e "systemctl restart xray@*"
-echo ""
-echo -e "${GREEN}To restart web server:${NC}"
-echo -e "systemctl restart nginx"
-echo -e "or"
-echo -e "systemctl restart apache2"
