@@ -33,9 +33,9 @@ display_header() {
     clear
     echo -e "${PURPLE}"
     echo -e "╔══════════════════════════════════════════════╗"
-    echo -e "║          🛡️ VPS BACKUP SYSTEM 🛡️           ║"
+    echo -e "║          🛡️ VPS BACKUP SYSTEM 🛡️            ║"
     echo -e "╠══════════════════════════════════════════════╣"
-    echo -e "║      Automated Backup with Cloud Storage     ║"
+    echo -e "║      Comprehensive System Backup Utility     ║"
     echo -e "╚══════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
@@ -48,14 +48,15 @@ export URL="https://api.telegram.org/bot$KEY/sendMessage"
 
 display_header
 IP=$(curl -sS ipv4.icanhazip.com)
-domain=$(cat /etc/xray/domain)
+domain=$(cat /etc/xray/domain 2>/dev/null)
 date=$(date +"%Y-%m-%d")
 timestamp=$(date +"%Y%m%d_%H%M%S")
 
-# Backup directory and file
+# Backup configuration
 BACKUP_DIR="/root/backup_${timestamp}"
 BACKUP_FILE="/root/backup_${IP}_${timestamp}.zip"
 BACKUP_FILE_NAME="backup_${IP}_${timestamp}.zip"
+LOG_FILE="/root/backup_${timestamp}.log"
 
 # Create backup directory
 echo -e "${BLUE}🔹 Creating backup directory...${NC}"
@@ -64,42 +65,106 @@ mkdir -p "$BACKUP_DIR" || {
     exit 1
 }
 
-# Copy system files with progress
-echo -e "${BLUE}🔹 Copying system files...${NC}"
-important_files=(
-    "/etc/passwd"
-    "/etc/group"
-    "/etc/shadow"
-    "/etc/gshadow"
-    "/etc/crontab"
-)
+# Start logging
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>"$LOG_FILE" 2>&1
+echo -e "Backup Log - $date $(date +"%H:%M:%S")"
+echo -e "===================================="
 
-for file in "${important_files[@]}"; do
-    if [ -f "$file" ]; then
-        cp "$file" "$BACKUP_DIR/" && echo -e "${GREEN}✔ Successfully copied $file${NC}" || echo -e "${RED}❌ Failed to copy $file${NC}"
+# Function to backup files with verification
+backup_file() {
+    local src=$1
+    local desc=$2
+    
+    if [ -f "$src" ]; then
+        cp "$src" "$BACKUP_DIR/" && echo -e "${GREEN}✔ $desc backed up${NC}" || echo -e "${RED}❌ Failed to backup $desc${NC}"
     else
-        echo -e "${ORANGE}⚠ File $file not found${NC}"
+        echo -e "${ORANGE}⚠ $desc not found${NC}"
     fi
-done
+}
 
-# Copy directories
-echo -e "${BLUE}🔹 Copying directories...${NC}"
-directories=(
-    "/var/lib/kyt/"
-    "/etc/xray"
-    "/var/www/html/"
-)
-
-for dir in "${directories[@]}"; do
-    if [ -d "$dir" ]; then
-        cp -r "$dir" "$BACKUP_DIR/$(basename "$dir")" && echo -e "${GREEN}✔ Successfully copied $dir${NC}" || echo -e "${RED}❌ Failed to copy $dir${NC}"
+# Function to backup directories with verification
+backup_dir() {
+    local src=$1
+    local desc=$2
+    
+    if [ -d "$src" ]; then
+        cp -r "$src" "$BACKUP_DIR/$(basename "$src")" && echo -e "${GREEN}✔ $desc backed up${NC}" || echo -e "${RED}❌ Failed to backup $desc${NC}"
     else
-        echo -e "${ORANGE}⚠ Directory $dir not found${NC}"
+        echo -e "${ORANGE}⚠ $desc not found${NC}"
     fi
-done
+}
+
+# Main backup process
+echo -e "${CYAN}🔸 Backing up system configuration files...${NC}"
+backup_file "/etc/passwd" "User accounts"
+backup_file "/etc/group" "User groups"
+backup_file "/etc/shadow" "User passwords"
+backup_file "/etc/gshadow" "Group passwords"
+backup_file "/etc/crontab" "Cron jobs"
+backup_file "/etc/sudoers" "Sudo configuration"
+backup_file "/etc/hosts" "Hosts file"
+backup_file "/etc/resolv.conf" "DNS configuration"
+backup_file "/etc/ssh/sshd_config" "SSH configuration"
+backup_file "/root/.bashrc" "Root bashrc"
+backup_file "/root/.profile" "Root profile"
+
+# Backup network configuration
+echo -e "${CYAN}🔸 Backing up network configuration...${NC}"
+if [ -d "/etc/netplan" ]; then
+    backup_dir "/etc/netplan" "Netplan configuration"
+fi
+backup_file "/etc/network/interfaces" "Network interfaces"
+
+# Backup services
+echo -e "${CYAN}🔸 Backing up service configurations...${NC}"
+backup_dir "/etc/systemd/system" "Systemd services"
+backup_dir "/etc/nginx" "Nginx configuration" 2>/dev/null
+backup_dir "/etc/apache2" "Apache configuration" 2>/dev/null
+
+# Backup application data
+echo -e "${CYAN}🔸 Backing up application data...${NC}"
+backup_dir "/var/lib/kyt/" "kyt data"
+backup_dir "/etc/xray" "Xray configuration"
+backup_dir "/var/www/html/" "Web content"
+backup_dir "/etc/openvpn" "OpenVPN configuration" 2>/dev/null
+backup_dir "/etc/wireguard" "WireGuard configuration" 2>/dev/null
+
+# Backup databases if exists
+echo -e "${CYAN}🔸 Backing up databases...${NC}"
+if command -v mysql &>/dev/null; then
+    echo -e "${BLUE}🔹 Backing up MySQL databases...${NC}"
+    mkdir -p "$BACKUP_DIR/mysql"
+    databases=$(mysql -e "SHOW DATABASES;" | grep -Ev "(Database|information_schema|performance_schema|mysql)")
+    for db in $databases; do
+        mysqldump --complete-insert --routines --triggers --single-transaction "$db" > "$BACKUP_DIR/mysql/$db.sql" && \
+        echo -e "${GREEN}✔ MySQL database $db backed up${NC}" || \
+        echo -e "${RED}❌ Failed to backup MySQL database $db${NC}"
+    done
+fi
+
+if command -v psql &>/dev/null; then
+    echo -e "${BLUE}🔹 Backing up PostgreSQL databases...${NC}"
+    mkdir -p "$BACKUP_DIR/postgresql"
+    databases=$(psql -l -t | cut -d'|' -f1 | sed -e 's/ //g' -e '/^$/d' | grep -vE "(template[0-9]|postgres)")
+    for db in $databases; do
+        pg_dump "$db" > "$BACKUP_DIR/postgresql/$db.sql" && \
+        echo -e "${GREEN}✔ PostgreSQL database $db backed up${NC}" || \
+        echo -e "${RED}❌ Failed to backup PostgreSQL database $db${NC}"
+    done
+fi
+
+# Backup additional important files
+echo -e "${CYAN}🔸 Backing up additional important files...${NC}"
+backup_file "/root/email" "Email configuration"
+backup_dir "/etc/bot" "Bot configuration"
+backup_file "/etc/v2ray/config.json" "V2Ray configuration" 2>/dev/null
+backup_file "/etc/trojan-go/config.json" "Trojan-Go configuration" 2>/dev/null
+backup_file "/etc/shadowsocks-libev/config.json" "Shadowsocks configuration" 2>/dev/null
 
 # Create ZIP archive
-echo -e "${BLUE}🔹 Creating ZIP archive...${NC}"
+echo -e "${BLUE}🔹 Creating compressed backup archive...${NC}"
 cd "$BACKUP_DIR" || {
     echo -e "${RED}❌ Failed to enter backup directory${NC}"
     exit 1
@@ -112,6 +177,8 @@ if [ $? -ne 0 ]; then
     exit 1
 else
     echo -e "${GREEN}✔ ZIP backup file created: $BACKUP_FILE${NC}"
+    filesize=$(du -sh "$BACKUP_FILE" | cut -f1)
+    echo -e "${BLUE}🔹 Backup size: $filesize${NC}"
 fi
 
 # Upload to Google Drive
@@ -146,23 +213,28 @@ TEXT="
 <b>   🔄 BACKUP NOTIFICATION 🔄</b>
 <b>      VPS Backup Details</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>🖥️ IP VPS  :</b> <code>${IP} </code>
+<b>🖥️ IP VPS  :</b> <code>${IP}</code>
 <b>🌐 DOMAIN :</b> <code>${domain}</code>
 <b>📅 Date   :</b> <code>$date</code>
 <b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
+<b>📦 Size   :</b> <code>$filesize</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>🗄️ Backup File :</b> <code>$BACKUP_FILE_NAME</code>
 <b>🔗 Backup Link:</b> <code>$link</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<code>Copy the link to restore on a new VPS</code>
+<code>✅ Backup completed successfully</code>
 <code>🤖 Bot : @RosyVpn</code>
 "
 
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && echo -e "${GREEN}✔ Telegram notification sent${NC}" || echo -e "${RED}❌ Failed to send Telegram notification${NC}"
+curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" "$URL" >/dev/null && \
+echo -e "${GREEN}✔ Telegram notification sent${NC}" || \
+echo -e "${RED}❌ Failed to send Telegram notification${NC}"
 
 # Clean up
-echo -e "${BLUE}🔹 Cleaning temporary directory...${NC}"
-rm -rf "$BACKUP_DIR" && echo -e "${GREEN}✔ Temporary directory cleaned${NC}" || echo -e "${RED}❌ Failed to clean temporary directory${NC}"
+echo -e "${BLUE}🔹 Cleaning temporary files...${NC}"
+rm -rf "$BACKUP_DIR" && \
+echo -e "${GREEN}✔ Temporary files cleaned${NC}" || \
+echo -e "${RED}❌ Failed to clean temporary files${NC}"
 
 # Display final information
 display_header
@@ -171,7 +243,9 @@ echo -e "╔══════════════════════�
 echo -e "║               BACKUP COMPLETE                ║"
 echo -e "╠══════════════════════════════════════════════╣"
 echo -e "║  IP VPS        : $IP"
+echo -e "║  Domain        : ${domain:-Not configured}"
 echo -e "║  Backup File   : $BACKUP_FILE_NAME"
+echo -e "║  Backup Size   : $filesize"
 echo -e "║  Backup Link   : $link"
 echo -e "║  Date          : $date"
 echo -e "║  Time          : $(date +"%H:%M:%S")"
