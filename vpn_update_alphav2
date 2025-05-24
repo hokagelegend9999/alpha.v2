@@ -27,8 +27,8 @@ echo " ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝ 
 echo " ██╗   ██╗██████╗ ███╗   ██╗"
 echo " ██║   ██║██╔══██╗████╗  ██║"
 echo " ██║   ██║██████╔╝██╔██╗ ██║"
-echo " ██║   ██║██╔═══╝ ██║╚██╗██║"
-echo " ╚██████╔╝██║     ██║ ╚████║"
+echo "  ██║ ██ ║██╔═══╝ ██║╚██╗██║"
+echo "  ╚████ ╔╝██║     ██║ ╚████║"
 echo "  ╚═════╝ ╚═╝     ╚═╝  ╚═══╝"
 echo -e "\033[0m"  # Reset color
     echo -e "${YELLOW}------------------------------------------${NC}"
@@ -92,7 +92,7 @@ main_install() {
     # Stop spinner
     kill $SPINNER_PID
     wait $SPINNER_PID 2>/dev/null
-    4. Install BACKUP & RESTORE /usr/local/sbin
+    # 4. Install BACKUP & RESTORE /usr/local/sbin
     sudo apt-get install dos2unix -y
     sudo dos2unix /usr/local/sbin/backup
     sudo dos2unix /usr/local/sbin/restore
