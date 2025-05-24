@@ -4,15 +4,23 @@ CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
 KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
+
+# Define color variables
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 clear
 function notif_clearcache() {
-    green "Notif AddHost Tele"
+    echo -e "${GREEN}Notif AddHost Tele${NC}"
     sleep 2
     CHATID="$CHATID"
-KEY="$KEY"
-TIME="$TIME"
-URL="$URL"
-TEXT="
+    KEY="$KEY"
+    TIME="$TIME"
+    URL="$URL"
+    TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>  ⚠️CLEAR CACHE NOTIF⚠️</b>
 <b>     Clear Cache VPS</b>
@@ -21,18 +29,19 @@ TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>BY BOT : HokageLegend</code>
 "
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
+
 echo "Checking VPS"
 clear
 echo ""
 echo ""
-echo -e "[ \033[32mInfo\033[0m ] Clear RAM Cache"
+echo -e "[ ${GREEN}Info${NC} ] Clear RAM Cache"
 echo 1 > /proc/sys/vm/drop_caches
 sleep 3
-echo -e "[ \033[32mok\033[0m ] Cache cleared"
+echo -e "[ ${GREEN}ok${NC} ] Cache cleared"
 notif_clearcache
 echo ""
-echo -e " ${GREEN} Back to menu in 2 sec ${NC}"
-sleep 1
+echo -e "${GREEN}Back to menu in 2 sec${NC}"
+sleep 2
 menu
