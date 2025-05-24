@@ -34,10 +34,15 @@ display_header() {
 # Function to send Telegram notification
 notif_restore() {
     echo -e "${BLUE}🔹 Sending Telegram notification...${NC}"
+    IP=$(curl -sS ipv4.icanhazip.com)
     TEXT="
 <code>◇━━━━━━━━━━━━━━◇</code>
 <b>  🔄 RESTORE NOTIFICATION 🔄</b>
 <b>     VPS Restore Details</b>
+<code>◇━━━━━━━━━━━━━━◇</code>
+<b>🖥️ IP VPS  :</b> <code>${IP}</code>
+<b>📅 Date   :</b> <code>$(date +"%Y-%m-%d")</code>
+<b>⏰ Time   :</b> <code>$(date +"%H:%M:%S")</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>✅ Restore Process Completed</code>
 <code>◇━━━━━━━━━━━━━━◇</code>
@@ -47,43 +52,87 @@ notif_restore() {
     echo -e "${GREEN}✔ Telegram notification sent${NC}"
 }
 
+# Function to restore files with verification
+restore_file() {
+    local src=$1
+    local dest=$2
+    local desc=$3
+    
+    if [ -f "$src" ]; then
+        cp "$src" "$dest" && echo -e "${GREEN}✔ $desc restored${NC}" || echo -e "${RED}❌ Failed to restore $desc${NC}"
+    else
+        echo -e "${ORANGE}⚠ $desc not found in backup${NC}"
+    fi
+}
+
+# Function to restore directories with verification
+restore_dir() {
+    local src=$1
+    local dest=$2
+    local desc=$3
+    
+    if [ -d "$src" ]; then
+        # Remove existing directory if it exists
+        [ -d "$dest" ] && rm -rf "$dest"
+        cp -r "$src" "$dest" && echo -e "${GREEN}✔ $desc restored${NC}" || echo -e "${RED}❌ Failed to restore $desc${NC}"
+    else
+        echo -e "${ORANGE}⚠ $desc not found in backup${NC}"
+    fi
+}
+
 # Main restore process
 display_header
 echo -e "${GREEN}🔹 Please enter the backup file link${NC}"
 read -rp "🔗 Backup URL: " -e url
 
 echo -e "${BLUE}🔹 Downloading backup file...${NC}"
-wget -O backup.zip "$url" && echo -e "${GREEN}✔ Backup downloaded successfully${NC}" || {
+if ! wget -O backup.zip "$url"; then
     echo -e "${RED}❌ Failed to download backup file${NC}"
     exit 1
-}
+fi
+echo -e "${GREEN}✔ Backup downloaded successfully${NC}"
 
 echo -e "${BLUE}🔹 Extracting backup files...${NC}"
-unzip -o backup.zip && echo -e "${GREEN}✔ Backup extracted successfully${NC}" || {
+if ! unzip -o backup.zip; then
     echo -e "${RED}❌ Failed to extract backup file${NC}"
+    rm -f backup.zip
     exit 1
-}
+fi
+echo -e "${GREEN}✔ Backup extracted successfully${NC}"
 
 rm -f backup.zip
 sleep 1
 
 echo -e "${PURPLE}⚙️ Starting restore process...${NC}"
-cd /root/backup || {
+if [ ! -d "/root/backup" ]; then
     echo -e "${RED}❌ Backup directory not found${NC}"
     exit 1
-}
+fi
 
-echo -e "${BLUE}🔹 Restoring system files...${NC}"
-cp passwd /etc/ && echo -e "${GREEN}✔ /etc/passwd restored${NC}"
-cp group /etc/ && echo -e "${GREEN}✔ /etc/group restored${NC}"
-cp shadow /etc/ && echo -e "${GREEN}✔ /etc/shadow restored${NC}"
-cp gshadow /etc/ && echo -e "${GREEN}✔ /etc/gshadow restored${NC}"
-cp crontab /etc/ && echo -e "${GREEN}✔ /etc/crontab restored${NC}"
+cd /root/backup || exit 1
 
-echo -e "${BLUE}🔹 Restoring directories...${NC}"
-cp -r kyt /var/lib/ && echo -e "${GREEN}✔ /var/lib/kyt restored${NC}"
-cp -r xray /etc/ && echo -e "${GREEN}✔ /etc/xray restored${NC}"
-cp -r html /var/www/ && echo -e "${GREEN}✔ /var/www/html restored${NC}"
+# Restore critical system files
+echo -e "${CYAN}🔸 Restoring system configuration files...${NC}"
+restore_file "passwd" "/etc/passwd" "User accounts"
+restore_file "group" "/etc/group" "User groups"
+restore_file "shadow" "/etc/shadow" "User passwords"
+restore_file "gshadow" "/etc/gshadow" "Group passwords"
+restore_file "crontab" "/etc/crontab" "Cron jobs"
+
+# Restore important directories
+echo -e "${CYAN}🔸 Restoring application data...${NC}"
+restore_dir "kyt" "/var/lib/kyt" "kyt data"
+restore_dir "xray" "/etc/xray" "Xray configuration"
+restore_dir "html" "/var/www/html" "Web content"
+
+# Restore additional files if they exist
+[ -f "/root/email" ] && restore_file "email" "/root/email" "Email configuration"
+[ -f "/etc/bot/.bot.db" ] && restore_file ".bot.db" "/etc/bot/.bot.db" "Bot configuration"
+
+# Set proper permissions
+echo -e "${BLUE}🔹 Setting correct permissions...${NC}"
+chmod 644 /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/crontab
+chmod -R 755 /var/lib/kyt /etc/xray /var/www/html
 
 # Send notification
 notif_restore
@@ -101,8 +150,15 @@ echo -e "║             RESTORE COMPLETE                 ║"
 echo -e "╠══════════════════════════════════════════════╣"
 echo -e "║  ✅ All files and configurations restored     ║"
 echo -e "║  ✅ System should be fully functional        ║"
+echo -e "║  ✅ Permissions set correctly                ║"
 echo -e "╚══════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo -e "${GREEN}✔ Restore process completed successfully${NC}"
 echo -e "\n${ORANGE}Press Enter to continue...${NC}"
 read -p ""
+
+# Suggest services that might need restarting
+echo -e "${CYAN}🔄 You may need to restart these services:${NC}"
+echo -e "systemctl restart xray"
+echo -e "systemctl restart cron"
+echo -e "systemctl restart nginx/apache2 (if applicable)"
