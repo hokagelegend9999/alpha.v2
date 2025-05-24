@@ -315,6 +315,7 @@ CHATID="1469244768"
 KEY="7911375235:AAERwknqnWLoqWFbsSuUfqCQGMy93UQHUTk"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 ISP=$(cat /root/.isp)
+IP=$(curl -sS ipv4.icanhazip.com)
 CITY=$(cat /root/.city)
 TIMEZONE=$(printf '%(%H:%M:%S)T')
     TEXT="
@@ -324,6 +325,7 @@ TIMEZONE=$(printf '%(%H:%M:%S)T')
 <code>User     :</code><code>$username</code>
 <code>ISP      :</code><code>$ISP</code>
 <code>CITY     :</code><code>$CITY</code>
+<code>IP       :</code><code>$CITY</code>
 <code>DATE     :</code><code>$DATE</code>
 <code>Time     :</code><code>$TIMEZONE</code>
 <code>Exp Sc.  :</code><code>$exp</code>
