@@ -131,4 +131,13 @@ sudo systemctl status haproxy
 
 ```
 wget https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2 && chmod +x vpn_update_alphav2 && ./vpn_update_alphav2
+```
+
+### UBUNTU 22 TEST
+
+```
+### INSTALL SCRIPT 
+```
+apt install -y && apt update -y && apt upgrade -y && wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/ub22.sh && chmod +x ub22.sh && ./ub22.sh
+```
 
