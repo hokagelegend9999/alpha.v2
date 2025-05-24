@@ -33,7 +33,7 @@ SERONLINE=$(uptime -p | cut -d " " -f 2-10000)
 clear
 MYIP=$(curl -sS ipv4.icanhazip.com)
 echo ""
-izinsc="https://raw.githubusercontent.com/rasi1982/ijin/refs/heads/main/alpha"
+izinsc="https://raw.githubusercontent.com/hokagelegend9999/ijin/refs/heads/main/alpha"
 # USERNAME
 rm -f /usr/bin/user
 username=$(curl ${izinsc} | grep $MYIP | awk '{print $2}')
@@ -121,7 +121,7 @@ clear
 
 echo -e " "
 echo -e "   ${Blue}╭════════════════════════════════════════════╮${NC}"
-echo -e "   ${Blue}│$NC${f}     Welcome To ROSI VPN AUTOSCRIPT PREMIUM       $NC${Blue}│$NC"
+echo -e "   ${Blue}│$NC${f}  Welcome To HOKAGE LEGEND AUTOSCRIPT PREMIUM       $NC${Blue}│$NC"
 echo -e "   ${Blue}╰════════════════════════════════════════════╯${NC}"
 echo -e " ${YELL}╭══════════════════════════════════════════════════╮${NC}"
 echo -e "   ${z}$NC [${f}01${NC}]$grenbo MENU TRIAL$NC       ${z}   $NC [${f}08${NC}]$purple BACKUP/ RESTORE "    
@@ -136,13 +136,13 @@ echo -e "   ${y} ═════════════════════
 echo -e "   ${r} PILIH MENU DENGAN CARA KETIK 1/14 LALU ENTER $NC"
 echo -e "   ${y} ════════════════════════════════════════════"
 echo -e "   ${Blue}╭═══════════════════════════════════════${NC}"
-echo -e "   ${Blue}│$NC${f} Developer$NC  ${z}=$NC ROSI STORE"
-echo -e "   ${Blue}│$NC${f} Telegram$NC   ${z}=$NC @FRosi_46"
+echo -e "   ${Blue}│$NC${f} Developer$NC  ${z}=$NC HOKAGE LEGEND"
+echo -e "   ${Blue}│$NC${f} Telegram$NC   ${z}=$NC @HookageLegend"
 echo -e "   ${Blue}│$NC${f} IP ADDRESS$NC ${z}=$NC $IPVPS${NC}"
 echo -e "   ${Blue}│$NC${f} User$NC       ${z}=$NC $username"
 echo -e "   ${Blue}│$NC${f} Exp Script$NC ${z}=$NC $exp $certifacate Days$NC $sts"
 echo -e "   ${Blue}╰═══════════════════════════════════════${NC}"
-echo -e "     ${f}THANKS YOU FOR USING SCRIPT ROSI STORE $NC"
+echo -e "     ${f}THANKS YOU FOR USING SCRIPT HOKAGE LEGEND $NC"
 echo -e ""
 read -p " PILIH OPSI MENU [ 1-14 atau x] ➤ : " opt
 echo -e ""
@@ -235,9 +235,9 @@ kontol
 ;;
 12)
 clear
-wget -q https://github.com/rasi1982/alpha/raw/refs/heads/main/update.sh
-chmod +x update.sh
-./update.sh
+wget -q https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/vpn_update_alphav2
+chmod +x vpn_update_alphav2
+./vpn_update_alphav2
 ;;
 13)
 clear
