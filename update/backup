@@ -16,19 +16,11 @@ CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
 KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
+export FILE_URL="https://api.telegram.org/bot$KEY/sendDocument"
 clear
 IP=$(curl -sS ipv4.icanhazip.com)
 domain=$(cat /etc/xray/domain)
 date=$(date +"%Y-%m-%d")
-clear
-email=$(cat /root/email)
-if [[ "$email" = "" ]]; then
-echo "Masukkan Email Untuk Menerima Backup"
-read -rp "Email : " -e email
-cat <<EOF>>/root/email
-$email
-EOF
-fi
 clear
 echo "Mohon Menunggu , Proses Backup sedang berlangsung !!"
 rm -rf /root/backup
@@ -43,10 +35,16 @@ cp -r /etc/xray backup/xray
 cp -r /var/www/html/ backup/html
 cd /root
 zip -r $IP-$date.zip backup > /dev/null 2>&1
-rclone copy /root/$IP-$date.zip dr:backup/
-url=$(rclone link dr:backup/$IP-$date.zip)
-id=(`echo $url | grep '^https' | cut -d'=' -f2`)
-link="https://drive.google.com/u/4/uc?id=${id}&export=download"
+
+# Send ZIP file to Telegram
+curl -F chat_id="$CHATID" \
+-F document=@"/root/$IP-$date.zip" \
+-F caption="Backup Data VPS
+IP: $IP
+Domain: $domain
+Tanggal: $date" \
+"https://api.telegram.org/bot$KEY/sendDocument" >/dev/null 2>&1
+
 rm -rf /root/backup
 rm -r /root/$IP-$date.zip
 clear
@@ -63,9 +61,8 @@ TEXT="
 <b>DOMAIN :</b> <code>${domain}</code>
 <b>Tanggal : $date</b>
 <code>◇━━━━━━━━━━━━━━◇</code>
-<b>Link Backup   :</b> $link
-<code>◇━━━━━━━━━━━━━━◇</code>
-<code>Silahkan copy Link dan restore di VPS baru</code>
+<code>File backup sudah dikirim ke Telegram</code>
+<code>Silahkan download file zip tersebut</code>
 <code>BY BOT : @HOKAGEVPN</code>
 "
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
@@ -75,9 +72,9 @@ echo -e "
 Detail Backup 
 ==================================
 IP VPS        : $IP
-Link Backup   : $link
 Tanggal       : $date
 ==================================
 "
-echo "Silahkan copy Link dan restore di VPS baru"
+echo "File backup sudah dikirim ke Telegram"
+echo "Silahkan download file zip tersebut"
 echo ""
