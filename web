@@ -1,0 +1,279 @@
+#!/bin/bash
+# ==================================================
+# AUTO INSTALLER WEB & TRIPAY PAYMENT GATEWAY
+# BY: HOKAGE LEGEND
+# ==================================================
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+clear
+echo -e "${YELLOW}==================================================${NC}"
+echo -e "${GREEN}  MEMULAI INSTALASI WEB & SISTEM TRIPAY HOKAGE  ${NC}"
+echo -e "${YELLOW}==================================================${NC}"
+sleep 2
+
+# 1. INSTALL DEPENDENSI PHP
+echo -e "\n[+] Menginstal PHP dan ekstensi yang dibutuhkan..."
+apt update -y
+apt install php-fpm php-curl php-json php-mysql -y
+systemctl start php7.4-fpm
+systemctl enable php7.4-fpm
+
+# 2. MEMBUAT HALAMAN WEB UTAMA (PORT 80/443)
+echo -e "\n[+] Membuat Halaman Web Utama (Landing Page)..."
+cat << 'EOF' > /usr/share/nginx/html/index.html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hokage Legend - Premium VPN & Tunneling</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #f39c12; --bg-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364); --glass-bg: rgba(255, 255, 255, 0.08); --glass-border: rgba(255, 255, 255, 0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; scroll-behavior: smooth; }
+        body { background: var(--bg-grad); color: #fff; line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; }
+        header { background: rgba(0,0,0,0.5); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); text-decoration: none; text-transform: uppercase; letter-spacing: 2px; }
+        nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 500; transition: 0.3s; cursor: pointer; }
+        nav a:hover { color: var(--primary); }
+        .container { width: 90%; max-width: 1200px; margin: auto; padding: 40px 0; flex: 1; }
+        .glass-panel { background: var(--glass-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 40px; }
+        h1, h2, h3 { color: var(--primary); margin-bottom: 15px; }
+        .hero { text-align: center; padding: 60px 20px; }
+        .hero p { font-size: 1.2rem; max-width: 600px; margin: 0 auto 20px auto; color: #ddd; }
+        .btn { display: inline-block; background: var(--primary); color: #111; padding: 12px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; transition: 0.3s; border: none; cursor: pointer; width: 100%; text-align: center; }
+        .btn:hover { background: #e67e22; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4); }
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px; }
+        .card { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 15px; padding: 30px; text-align: center; transition: 0.3s; }
+        .card:hover { transform: translateY(-10px); border-color: var(--primary); }
+        .price { font-size: 2rem; font-weight: bold; color: #fff; margin: 20px 0; }
+        .card ul { list-style: none; margin-bottom: 25px; color: #ccc; }
+        .card ul li { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; color: #ddd; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-control[readonly] { background: rgba(255,255,255,0.1); color: #aaa; cursor: not-allowed; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 999; justify-content: center; align-items: center; }
+        .modal-content { background: rgba(25, 35, 45, 0.9); border: 1px solid var(--primary); padding: 40px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; position: relative; box-shadow: 0 0 30px rgba(243, 156, 18, 0.2); }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #aaa; transition: 0.3s; }
+        .close-modal:hover { color: #fff; }
+        .tos-box { font-size: 0.95rem; color: #ccc; }
+        footer { background: rgba(0,0,0,0.8); padding: 30px 5%; text-align: center; border-top: 1px solid var(--glass-border); }
+        @media(max-width: 768px) { nav { display: none; } }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">Hokage Legend</a>
+        <nav>
+            <a href="#produk">Produk</a>
+            <a href="#tos">Ketentuan</a>
+            <a id="nav-login" onclick="bukaModalLogin()"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <span id="nav-user" style="display: none; margin-left: 20px; color: var(--primary); font-weight: bold;">
+                <i class="fas fa-user-circle"></i> <span id="nama-user"></span> 
+                <a onclick="logout()" style="color: #ff4757; margin-left: 10px; font-size: 0.8rem;"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+            </span>
+        </nav>
+    </header>
+    <div class="container">
+        <section class="hero glass-panel">
+            <h1>Premium VPN & Tunneling Service</h1>
+            <p>Akses internet tanpa batas, aman, dan cepat. Jaringan Private Server VIP dengan auto-injeksi terbaik di kelasnya.</p>
+            <a href="#produk" class="btn" style="width: auto;">Lihat Layanan Kami</a>
+        </section>
+        <section id="produk">
+            <h2 style="text-align: center;">Katalog Layanan</h2>
+            <div class="pricing-grid">
+                <div class="card">
+                    <h3>Paket Basic (30 Hari)</h3>
+                    <div class="price">Rp 15.000</div>
+                    <ul><li><i class="fas fa-check"></i> 1 Akun VPN Premium</li><li><i class="fas fa-check"></i> Server SG / ID</li></ul>
+                    <button onclick="prosesBeli('Basic VPN', 15000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
+                </div>
+                <div class="card" style="border-color: var(--primary);">
+                    <h3>Paket VIP (30 Hari)</h3>
+                    <div class="price">Rp 30.000</div>
+                    <ul><li><i class="fas fa-check"></i> Semua Fitur Basic</li><li><i class="fas fa-check"></i> Support Game Online (UDP)</li></ul>
+                    <button onclick="prosesBeli('VIP VPN', 30000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
+                </div>
+            </div>
+        </section>
+        <section id="checkout" class="glass-panel" style="margin-top: 50px; display: none;">
+            <h2 style="text-align: center; margin-bottom: 20px;"><i class="fas fa-file-invoice-dollar"></i> Checkout Pesanan</h2>
+            <form action="https://web.hokage.web.id:81/checkout.php" method="POST" style="max-width: 500px; margin: 0 auto;">
+                <div class="form-group"><label>Paket Pilihan</label><input type="text" id="nama_paket" name="nama_paket" class="form-control" readonly required></div>
+                <div class="form-group"><label>Harga (Rp)</label><input type="number" id="harga_paket" name="harga_paket" class="form-control" readonly required></div>
+                <div class="form-group"><label>ID Telegram / Username Pembeli</label><input type="text" id="telegram_id" name="telegram_id" class="form-control" readonly required><small style="color: var(--primary);">*Akun VPN dikirim otomatis ke Telegram ini.</small></div>
+                <div class="form-group">
+                    <label>Pilih Metode Pembayaran</label>
+                    <select name="method" class="form-control" required style="background: rgba(0,0,0,0.5); color: #fff;">
+                        <option value="" disabled selected>-- Pilih Pembayaran --</option>
+                        <option value="QRISC" style="color: black;">QRIS (Dana, Gopay, OVO, LinkAja)</option>
+                        <option value="OVO" style="color: black;">OVO E-Wallet</option>
+                        <option value="BRIVA" style="color: black;">BRI Virtual Account</option>
+                        <option value="BCAVA" style="color: black;">BCA Virtual Account</option>
+                        <option value="MANDIRIVA" style="color: black;">Mandiri Virtual Account</option>
+                        <option value="ALFAMART" style="color: black;">Alfamart</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 15px;">Lanjutkan Pembayaran Tripay <i class="fas fa-arrow-right"></i></button>
+            </form>
+        </section>
+        <section id="tos" class="glass-panel tos-box" style="margin-top: 50px;">
+            <h2>TOS & Refund Policy</h2>
+            <ul><li>Dilarang keras menggunakan server untuk Hacking, Spamming, atau Torrenting.</li><li>Kami <b>TIDAK</b> memberikan pengembalian dana (refund) untuk layanan yang sudah sukses dibuat.</li><li>Transaksi diproses secara otomatis 24/7 setelah pembayaran dikonfirmasi Tripay.</li></ul>
+        </section>
+    </div>
+    <footer>
+        <h3>Hokage Legend Store</h3>
+        <p style="color: #aaa;">Email: faridaumiabi@gmail.com | Telegram: @HookageLegend</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">&copy; 2026 Hokage Legend. Sistem Pembayaran didukung oleh <strong>Tripay</strong>.</p>
+    </footer>
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="tutupModalLogin()">&times;</span>
+            <h2 style="margin-bottom: 5px;"><i class="fas fa-user-lock"></i> Login Member</h2>
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 25px;">Silakan login untuk melanjutkan pesanan.</p>
+            <form onsubmit="eksekusiLogin(event)">
+                <div class="form-group"><label>Username / ID Telegram (Tanpa @)</label><input type="text" id="login_user" class="form-control" placeholder="Contoh: HookageLegend" required></div>
+                <div class="form-group"><label>Password / PIN</label><input type="password" id="login_pass" class="form-control" placeholder="Masukkan Password" required></div>
+                <button type="submit" class="btn" style="margin-top: 10px;">Login & Lanjutkan <i class="fas fa-sign-in-alt"></i></button>
+            </form>
+        </div>
+    </div>
+    <script>
+        let paketTertunda = null; let hargaTertunda = null;
+        window.onload = function() { cekStatusLogin(); };
+        function cekStatusLogin() { const user = sessionStorage.getItem('hokage_user'); if(user) { document.getElementById('nav-login').style.display = 'none'; document.getElementById('nav-user').style.display = 'inline-block'; document.getElementById('nama-user').innerText = user; } else { document.getElementById('nav-login').style.display = 'inline-block'; document.getElementById('nav-user').style.display = 'none'; document.getElementById('checkout').style.display = 'none'; } }
+        function prosesBeli(nama, harga) { const user = sessionStorage.getItem('hokage_user'); if(!user) { paketTertunda = nama; hargaTertunda = harga; bukaModalLogin(); } else { tampilkanCheckout(nama, harga, user); } }
+        function tampilkanCheckout(nama, harga, user) { document.getElementById('checkout').style.display = 'block'; document.getElementById('nama_paket').value = nama; document.getElementById('harga_paket').value = harga; document.getElementById('telegram_id').value = user; window.location.href = "#checkout"; }
+        function bukaModalLogin() { document.getElementById('loginModal').style.display = 'flex'; }
+        function tutupModalLogin() { document.getElementById('loginModal').style.display = 'none'; }
+        function eksekusiLogin(event) { event.preventDefault(); const user = document.getElementById('login_user').value; sessionStorage.setItem('hokage_user', user); tutupModalLogin(); cekStatusLogin(); if(paketTertunda && hargaTertunda) { tampilkanCheckout(paketTertunda, hargaTertunda, user); paketTertunda = null; hargaTertunda = null; } }
+        function logout() { sessionStorage.removeItem('hokage_user'); alert('Anda telah berhasil keluar.'); cekStatusLogin(); }
+    </script>
+</body>
+</html>
+EOF
+
+# Timpa default nginx agar fix
+cp /usr/share/nginx/html/index.html /usr/share/nginx/html/index.nginx-debian.html
+
+# 3. MEMBUAT SCRIPT CHECKOUT TRIPAY (PORT 81)
+echo -e "\n[+] Membuat Script Checkout Tripay..."
+cat << 'EOF' > /var/www/html/checkout.php
+<?php
+$apiKey       = 'MASUKKAN_API_KEY_ANDA_DISINI';
+$privateKey   = 'MASUKKAN_PRIVATE_KEY_ANDA_DISINI';
+$merchantCode = 'MASUKKAN_MERCHANT_CODE_ANDA_DISINI';
+$urlWebKita   = 'https://web.hokage.web.id/';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { die("Metode tidak diizinkan."); }
+$paket_nama  = $_POST['nama_paket'];
+$paket_harga = (int)$_POST['harga_paket'];
+$telegram_id = $_POST['telegram_id'];
+$method      = $_POST['method'];
+$merchantRef = 'HL-' . time();
+
+$data = [
+    'method'         => $method,
+    'merchant_ref'   => $merchantRef,
+    'amount'         => $paket_harga,
+    'customer_name'  => $telegram_id, 
+    'customer_email' => 'buyer@hokage.web.id', 
+    'customer_phone' => '081234567890',        
+    'order_items'    => [
+        [ 'sku' => 'VPN-01', 'name' => $paket_nama, 'price' => $paket_harga, 'quantity' => 1, 'product_url' => $urlWebKita, 'image_url' => $urlWebKita . 'logo.png' ]
+    ],
+    'return_url'   => $urlWebKita,
+    'expired_time' => (time() + (24 * 60 * 60)), 
+    'signature'    => hash_hmac('sha256', $merchantCode.$merchantRef.$paket_harga, $privateKey)
+];
+
+$tripayEndpoint = 'https://tripay.co.id/api-sandbox/transaction/create'; // Ganti api ke api-sandbox jika masa testing
+$curl = curl_init();
+curl_setopt_array($curl, [
+    CURLOPT_FRESH_CONNECT  => true, CURLOPT_URL => $tripayEndpoint, CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => false,
+    CURLOPT_HTTPHEADER     => ['Authorization: Bearer '.$apiKey], CURLOPT_FAILONERROR => false, CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS     => http_build_query($data), CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+]);
+$response = curl_exec($curl); $error = curl_error($curl); curl_close($curl);
+
+if (empty($error)) {
+    $result = json_decode($response);
+    if ($result->success == true) { header("Location: " . $result->data->checkout_url); exit; } 
+    else { echo "Gagal membuat transaksi: " . $result->message; }
+} else { echo "cURL Error: " . $error; }
+?>
+EOF
+
+# 4. MEMBUAT SCRIPT CALLBACK TRIPAY (PORT 81)
+echo -e "\n[+] Membuat Script Callback Tripay..."
+cat << 'EOF' > /var/www/html/callback.php
+<?php
+$tripayPrivateKey = 'MASUKKAN_PRIVATE_KEY_ANDA_DISINI';
+$botToken         = 'MASUKKAN_TOKEN_BOT_TELEGRAM_ANDA_DISINI';
+$json = file_get_contents("php://input");
+$serverSignature = isset($_SERVER['HTTP_X_CALLBACK_SIGNATURE']) ? $_SERVER['HTTP_X_CALLBACK_SIGNATURE'] : '';
+$signature = hash_hmac('sha256', $json, $tripayPrivateKey);
+
+if (hash_equals($signature, $serverSignature) !== true) { die(json_encode(['success' => false, 'message' => 'Invalid signature'])); }
+
+$data  = json_decode($json);
+$event = $_SERVER['HTTP_X_CALLBACK_EVENT'];
+
+if ($event == 'payment_status') {
+    if ($data->status == 'PAID') {
+        $reference      = $data->reference;
+        $amount         = $data->amount;
+        $payment_method = $data->payment_method;
+        $chat_id        = $data->merchant_ref; // Asumsi chat_id dikirim via merchant_ref
+        
+        $pesan = "✅ *PEMBAYARAN BERHASIL DITERIMA*\n\nRef: `$reference`\nMetode: $payment_method\nJumlah: Rp " . number_format($amount, 0, ',', '.') . "\n\nPesanan VPN Anda sedang diproses oleh sistem.";
+        kirimPesanTelegram($chat_id, $pesan, $botToken);
+    }
+}
+echo json_encode(['success' => true]);
+
+function kirimPesanTelegram($chat_id, $pesan, $token) {
+    $url = "https://api.telegram.org/bot" . $token . "/sendMessage";
+    $data = [ 'chat_id' => $chat_id, 'text' => $pesan, 'parse_mode' => 'Markdown' ];
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $response = curl_exec($ch); curl_close($ch); return $response;
+}
+?>
+EOF
+
+# 5. MENAMBAHKAN KONFIGURASI PHP KE NGINX XRAY.CONF
+echo -e "\n[+] Konfigurasi Nginx agar membaca PHP di Port 81..."
+# Cek apakah blok PHP sudah ada agar tidak double
+if ! grep -q "location ~ \\.php\$" /etc/nginx/conf.d/xray.conf; then
+    # Menyisipkan blok PHP tepat di bawah baris 'root /var/www/html;'
+    sed -i '/root \/var\/www\/html;/a \    index index.php index.html index.htm;\n    location ~ \\.php$ {\n        include snippets\/fastcgi-php.conf;\n        fastcgi_pass unix:\/var\/run\/php\/php7.4-fpm.sock;\n    }' /etc/nginx/conf.d/xray.conf
+    echo -e "${GREEN}Konfigurasi PHP berhasil disuntikkan ke xray.conf.${NC}"
+else
+    echo -e "${YELLOW}Konfigurasi PHP sudah ada di xray.conf. Melewati langkah ini.${NC}"
+fi
+
+# 6. MENGATUR IZIN FOLDER & RESTART SERVICE
+echo -e "\n[+] Mengatur izin direktori dan merestart layanan..."
+chown -R www-data:www-data /var/www/html
+chown -R www-data:www-data /usr/share/nginx/html
+chmod -R 755 /var/www/html
+chmod -R 755 /usr/share/nginx/html
+
+nginx -t
+systemctl restart nginx
+systemctl restart php7.4-fpm
+
+echo -e "${YELLOW}==================================================${NC}"
+echo -e "${GREEN}  INSTALASI SELESAI!  ${NC}"
+echo -e "${YELLOW}==================================================${NC}"
+echo -e "Jangan lupa untuk mengedit file PHP dan memasukkan API Key Tripay Anda:"
+echo -e "1. nano /var/www/html/checkout.php"
+echo -e "2. nano /var/www/html/callback.php"
+echo -e "=================================================="
