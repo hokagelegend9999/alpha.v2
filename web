@@ -1,7 +1,8 @@
 #!/bin/bash
 # ==================================================
 # AUTO INSTALLER WEB & TRIPAY PAYMENT GATEWAY
-# UPDATED WITH LOGO BRANDING & AUTH SYSTEM: HOKAGE LEGEND
+# EFFICIENT VERSION - GITHUB ZIP EXTRACT
+# BY: HOKAGE LEGEND
 # ==================================================
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,554 +14,73 @@ echo -e "${GREEN}  MEMULAI INSTALASI WEB & SISTEM TRIPAY HOKAGE  ${NC}"
 echo -e "${YELLOW}==================================================${NC}"
 sleep 2
 
-# 1. INSTALL DEPENDENSI PHP & SQLITE
-echo -e "\n[+] Menginstal PHP dan ekstensi yang dibutuhkan..."
+# 1. INSTALL DEPENDENSI (Tambahkan unzip)
+echo -e "\n[+] Menginstal dependensi (PHP, SQLite3, Unzip, dll)..."
 apt update -y
-apt install php-fpm php-curl php-json php-mysql php-sqlite3 wget -y
+apt install php-fpm php-curl php-json php-mysql php-sqlite3 wget unzip -y
 systemctl start php7.4-fpm
 systemctl enable php7.4-fpm
 
-# 2. DOWNLOAD LOGO
-echo -e "\n[+] Mendownload Logo Hokage Legend..."
+# 2. PREPARASI DIREKTORI
+echo -e "\n[+] Menyiapkan direktori server..."
 mkdir -p /usr/share/nginx/html/
 mkdir -p /var/www/html/
-wget -O /usr/share/nginx/html/logo.png "https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/main/ssh/logo.png"
-cp /usr/share/nginx/html/logo.png /var/www/html/logo.png
 
-# 3. MEMBUAT HALAMAN WEB UTAMA (PORT 80/443)
-echo -e "\n[+] Membuat Halaman Web Utama (Landing Page)..."
-cat << 'EOF' > /usr/share/nginx/html/index.html
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hokage Legend - Premium VPN & Tunneling</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary: #f39c12; --bg-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364); --glass-bg: rgba(255, 255, 255, 0.08); --glass-border: rgba(255, 255, 255, 0.15); }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; scroll-behavior: smooth; }
-        body { background: var(--bg-grad); color: #fff; line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        header { background: rgba(0,0,0,0.5); padding: 0.5rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        .brand { display: flex; align-items: center; text-decoration: none; }
-        .brand img { width: 45px; height: auto; border-radius: 5px; margin-right: 10px; }
-        .logo-text { font-size: 1.5rem; font-weight: bold; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
-        
-        nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 500; transition: 0.3s; cursor: pointer; }
-        nav a:hover { color: var(--primary); }
-        
-        .container { width: 90%; max-width: 1200px; margin: auto; padding: 40px 0; flex: 1; }
-        .glass-panel { background: var(--glass-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 40px; }
-        h1, h2, h3 { color: var(--primary); margin-bottom: 15px; }
-        
-        .hero { text-align: center; padding: 60px 20px; }
-        .hero-logo { width: 120px; height: auto; margin-bottom: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(243, 156, 18, 0.3); }
-        .hero p { font-size: 1.2rem; max-width: 600px; margin: 0 auto 20px auto; color: #ddd; }
-        
-        .btn { display: inline-block; background: var(--primary); color: #111; padding: 12px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; transition: 0.3s; border: none; cursor: pointer; width: 100%; text-align: center; }
-        .btn:hover { background: #e67e22; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4); }
-        
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px; }
-        .card { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 15px; padding: 30px; text-align: center; transition: 0.3s; }
-        .card:hover { transform: translateY(-10px); border-color: var(--primary); }
-        .price { font-size: 2rem; font-weight: bold; color: #fff; margin: 20px 0; }
-        .card ul { list-style: none; margin-bottom: 25px; color: #ccc; }
-        .card ul li { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; color: #ddd; font-size: 0.9rem; }
-        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; outline: none; }
-        .form-control:focus { border-color: var(--primary); }
-        .form-control[readonly] { background: rgba(255,255,255,0.1); color: #aaa; cursor: not-allowed; }
-        
-        .tos-box { font-size: 0.95rem; color: #ccc; }
-        footer { background: rgba(0,0,0,0.8); padding: 30px 5%; text-align: center; border-top: 1px solid var(--glass-border); margin-top: auto; }
-        
-        @media(max-width: 768px) { nav { display: none; } }
-    </style>
-</head>
-<body>
-    <header>
-        <a href="#" class="brand">
-            <img src="logo.png" alt="Logo">
-            <span class="logo-text">Hokage Legend</span>
-        </a>
-        <nav>
-            <a href="#produk">Produk</a>
-            <a href="#tos">Ketentuan</a>
-            <a id="nav-register" href="https://web.hokage.web.id:81/register.php"><i class="fas fa-user-plus"></i> Daftar</a>
-            <a id="nav-login" onclick="bukaModalLogin()"><i class="fas fa-sign-in-alt"></i> Login</a>
-            
-            <span id="nav-user" style="display: none; margin-left: 20px; color: var(--primary); font-weight: bold;">
-                <i class="fas fa-user-circle"></i> <span id="nama-user"></span> 
-                <a onclick="logout()" style="color: #ff4757; margin-left: 10px; font-size: 0.8rem; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Keluar</a>
-            </span>
-        </nav>
-    </header>
+# 3. DOWNLOAD DAN EKSTRAK FILE WEB DARI GITHUB
+echo -e "\n[+] Mendownload file web.zip dari GitHub..."
+cd /tmp
+rm -rf web web.zip # Bersihkan sisa unduhan sebelumnya jika ada
+wget -O web.zip "https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/main/web.zip"
 
-    <div class="container">
-        <section class="hero glass-panel">
-            <img src="logo.png" alt="Logo" class="hero-logo">
-            <h1>Premium VPN & Tunneling Service</h1>
-            <p>Akses internet tanpa batas, aman, dan cepat. Jaringan Private Server VIP dengan auto-injeksi terbaik di kelasnya.</p>
-            <a href="#produk" class="btn" style="width: auto;">Lihat Layanan Kami</a>
-        </section>
+echo -e "[+] Mengekstrak file web.zip..."
+mkdir -p /tmp/web
+unzip -o web.zip -d /tmp/web/
 
-        <section id="produk">
-            <h2 style="text-align: center;">Katalog Layanan</h2>
-            <div class="pricing-grid">
-                <div class="card">
-                    <h3>Paket Basic (30 Hari)</h3>
-                    <div class="price">Rp 15.000</div>
-                    <ul>
-                        <li><i class="fas fa-check"></i> 1 Akun VPN Premium</li>
-                        <li><i class="fas fa-check"></i> Server SG / ID</li>
-                    </ul>
-                    <button onclick="prosesBeli('Basic VPN', 15000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
-                </div>
-                <div class="card" style="border-color: var(--primary);">
-                    <h3>Paket VIP (30 Hari)</h3>
-                    <div class="price">Rp 30.000</div>
-                    <ul>
-                        <li><i class="fas fa-check"></i> Semua Fitur Basic</li>
-                        <li><i class="fas fa-check"></i> Support Game Online (UDP)</li>
-                    </ul>
-                    <button onclick="prosesBeli('VIP VPN', 30000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
-                </div>
-            </div>
-        </section>
+# 4. DISTRIBUSI FILE KE FOLDER MASING-MASING
+echo -e "\n[+] Mendistribusikan file ke jalurnya masing-masing..."
 
-        <section id="checkout" class="glass-panel" style="margin-top: 50px; display: none;">
-            <h2 style="text-align: center; margin-bottom: 20px;"><i class="fas fa-file-invoice-dollar"></i> Checkout Pesanan</h2>
-            <form action="https://web.hokage.web.id:81/checkout.php" method="POST" style="max-width: 500px; margin: 0 auto;">
-                <input type="hidden" id="nama_paket" name="nama_paket">
-                <input type="hidden" id="harga_paket" name="harga_paket">
-                
-                <div class="form-group">
-                    <label>ID Telegram / Username</label>
-                    <input type="text" id="telegram_id" name="telegram_id" class="form-control" readonly required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Pilih Metode Pembayaran</label>
-                    <select name="method" class="form-control" required style="background: rgba(0,0,0,0.5); color: #fff;">
-                        <option value="" disabled selected>-- Pilih Pembayaran --</option>
-                        <option value="QRISC" style="color: black;">QRIS (Dana, Gopay, OVO)</option>
-                        <option value="OVO" style="color: black;">OVO E-Wallet</option>
-                        <option value="BRIVA" style="color: black;">BRI Virtual Account</option>
-                        <option value="BCAVA" style="color: black;">BCA Virtual Account</option>
-                        <option value="MANDIRIVA" style="color: black;">Mandiri Virtual Account</option>
-                        <option value="ALFAMART" style="color: black;">Alfamart</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn" style="margin-top: 15px;">Lanjutkan Pembayaran Tripay <i class="fas fa-arrow-right"></i></button>
-            </form>
-        </section>
+# A. Pindahkan file statis utama ke Nginx root (Port 80/443)
+cp -f /tmp/web/index.html /usr/share/nginx/html/
+cp -f /tmp/web/logo.png /usr/share/nginx/html/
+cp -f /usr/share/nginx/html/index.html /usr/share/nginx/html/index.nginx-debian.html
 
-        <section id="tos" class="glass-panel tos-box" style="margin-top: 50px;">
-            <h2>Ketentuan Layanan (TOS)</h2>
-            <ul>
-                <li>Dilarang keras menggunakan server untuk Hacking, Spamming, atau Torrenting.</li>
-                <li>Kami <b>TIDAK</b> memberikan pengembalian dana (refund) untuk layanan yang sudah sukses dibuat.</li>
-                <li>Transaksi diproses secara otomatis 24/7 setelah pembayaran dikonfirmasi oleh sistem Tripay.</li>
-                <li>Dengan melakukan pembelian, Anda dianggap telah menyetujui seluruh ketentuan ini.</li>
-            </ul>
-        </section>
-    </div>
+# B. Pindahkan file PHP dan Database ke /var/www/html (Port 81)
+cp -f /tmp/web/*.php /var/www/html/
+cp -f /tmp/web/web_users.db /var/www/html/
+cp -f /tmp/web/logo.png /var/www/html/ # Backup logo jika sewaktu-waktu dibutuhkan di halaman login
 
-    <footer>
-        <h3>Hokage Legend Store</h3>
-        <p style="color: #aaa; margin-bottom: 10px;">Email: faridaumiabi@gmail.com | Telegram: @HookageLegend</p>
-        <p style="font-size: 0.8rem; color: #888;">&copy; 2026 Hokage Legend. Sistem Pembayaran didukung oleh <strong>Tripay Payment Gateway</strong>.</p>
-    </footer>
+# Bersihkan file sampah instalasi
+rm -rf /tmp/web /tmp/web.zip
 
-    <script>
-        let pT = null; 
-        let hT = null;
-        
-        window.onload = function() { 
-            const urlParams = new URLSearchParams(window.location.search);
-            const loginSuccess = urlParams.get('login_success');
-            
-            if (loginSuccess) {
-                sessionStorage.setItem('hokage_user', loginSuccess);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                alert('✅ Login Berhasil! Selamat datang, ' + loginSuccess);
-            }
-            
-            cekStatusLogin(); 
-        };
-
-        function cekStatusLogin() { 
-            const u = sessionStorage.getItem('hokage_user'); 
-            if(u) { 
-                document.getElementById('nav-login').style.display = 'none'; 
-                document.getElementById('nav-register').style.display = 'none';
-                document.getElementById('nav-user').style.display = 'inline-block'; 
-                document.getElementById('nama-user').innerText = u; 
-            } else {
-                document.getElementById('nav-login').style.display = 'inline-block'; 
-                document.getElementById('nav-register').style.display = 'inline-block';
-                document.getElementById('nav-user').style.display = 'none'; 
-            }
-        }
-        
-        function prosesBeli(n, h) { 
-            const u = sessionStorage.getItem('hokage_user'); 
-            if(!u) { 
-                window.location.href = "https://web.hokage.web.id:81/login.php";
-            } else { 
-                tampilkanCheckout(n, h, u); 
-            } 
-        }
-        
-        function tampilkanCheckout(n, h, u) { 
-            document.getElementById('checkout').style.display = 'block'; 
-            document.getElementById('nama_paket').value = n; 
-            document.getElementById('harga_paket').value = h; 
-            document.getElementById('telegram_id').value = u; 
-            window.location.href = "#checkout"; 
-        }
-
-        function bukaModalLogin() { 
-            window.location.href = "https://web.hokage.web.id:81/login.php";
-        }
-        
-        function logout() { 
-            sessionStorage.removeItem('hokage_user'); 
-            location.reload(); 
-        }
-    </script>
-</body>
-</html>
-EOF
-
-# Timpa default nginx agar fix
-cp /usr/share/nginx/html/index.html /usr/share/nginx/html/index.nginx-debian.html
-
-# 4. MEMBUAT HALAMAN REGISTER & LOGIN (PORT 81)
-echo -e "\n[+] Membuat Halaman Registrasi (Register.php)..."
-cat << 'EOF' > /var/www/html/register.php
-<?php
-$db_file = '/var/www/html/web_users.db';
-$db = new PDO("sqlite:" . $db_file);
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$db->exec("CREATE TABLE IF NOT EXISTS web_users (id INTEGER PRIMARY KEY AUTOINCREMENT, telegram_id TEXT UNIQUE, password TEXT)");
-
-$msg = "";
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $tid = trim($_POST['telegram_id']);
-    $pass = $_POST['password'];
-    $hash = password_hash($pass, PASSWORD_DEFAULT);
-
-    try {
-        $stmt = $db->prepare("INSERT INTO web_users (telegram_id, password) VALUES (?, ?)");
-        $stmt->execute([$tid, $hash]);
-        $msg = "<div class='alert success'>✅ Registrasi berhasil! Silakan <a href='login.php' style='color:#fff; font-weight:bold;'>Login di sini</a>.</div>";
-    } catch (PDOException $e) {
-        if ($e->getCode() == 23000) { 
-            $msg = "<div class='alert error'>❌ Error: Username sudah terdaftar!</div>";
-        } else {
-            $msg = "<div class='alert error'>❌ Error System: " . $e->getMessage() . "</div>";
-        }
-    }
-}
-?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Hokage Legend</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary: #f39c12; --bg-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg-grad); color: #fff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: rgba(25, 35, 45, 0.9); border: 1px solid var(--primary); padding: 40px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.2); }
-        h2 { color: var(--primary); margin-bottom: 5px; }
-        p.desc { color: #aaa; font-size: 0.9rem; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; color: #ddd; font-size: 0.9rem; }
-        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; outline: none; }
-        .form-control:focus { border-color: var(--primary); }
-        .btn { display: inline-block; background: var(--primary); color: #111; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn:hover { background: #e67e22; }
-        .link { color: var(--primary); text-decoration: none; font-size: 0.9rem; display: block; margin-top: 15px; }
-        .alert { padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; }
-        .alert.success { background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; }
-        .alert.error { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; }
-    </style>
-</head>
-<body>
-    <div class="auth-box">
-        <h2><i class="fas fa-user-plus"></i> Daftar Member</h2>
-        <p class="desc">Buat akun untuk bertransaksi di Hokage Store.</p>
-        <?= $msg ?>
-        <form method="POST" action="">
-            <div class="form-group">
-                <label>ID Telegram / Username</label>
-                <input type="text" name="telegram_id" class="form-control" placeholder="Contoh: HookageLegend" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Buat Password" required minlength="4">
-            </div>
-            <button type="submit" class="btn">Daftar Sekarang <i class="fas fa-check-circle"></i></button>
-        </form>
-        <a href="login.php" class="link">Sudah punya akun? Login di sini.</a>
-        <a href="https://web.hokage.web.id/" class="link" style="color: #aaa;"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
-    </div>
-</body>
-</html>
-EOF
-
-echo -e "\n[+] Membuat Halaman Login (Login.php)..."
-cat << 'EOF' > /var/www/html/login.php
-<?php
-$db_file = '/var/www/html/web_users.db';
-$db = new PDO("sqlite:" . $db_file);
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-$msg = "";
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $tid = trim($_POST['telegram_id']);
-    $pass = $_POST['password'];
-
-    $stmt = $db->prepare("SELECT * FROM web_users WHERE telegram_id = ?");
-    $stmt->execute([$tid]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($pass, $user['password'])) {
-        $redirectUrl = "https://web.hokage.web.id/?login_success=" . urlencode($user['telegram_id']);
-        header("Location: " . $redirectUrl);
-        exit;
-    } else {
-        $msg = "<div class='alert error'>❌ Username atau Password salah!</div>";
-    }
-}
-?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Hokage Legend</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary: #f39c12; --bg-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg-grad); color: #fff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: rgba(25, 35, 45, 0.9); border: 1px solid var(--primary); padding: 40px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.2); }
-        h2 { color: var(--primary); margin-bottom: 5px; }
-        p.desc { color: #aaa; font-size: 0.9rem; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; color: #ddd; font-size: 0.9rem; }
-        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; outline: none; }
-        .form-control:focus { border-color: var(--primary); }
-        .btn { display: inline-block; background: var(--primary); color: #111; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; border: none; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn:hover { background: #e67e22; }
-        .link { color: var(--primary); text-decoration: none; font-size: 0.9rem; display: block; margin-top: 15px; }
-        .alert.error { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem;}
-    </style>
-</head>
-<body>
-    <div class="auth-box">
-        <h2><i class="fas fa-sign-in-alt"></i> Member Login</h2>
-        <p class="desc">Silakan masukkan akun Anda.</p>
-        <?= $msg ?>
-        <form method="POST" action="">
-            <div class="form-group">
-                <label>ID Telegram / Username</label>
-                <input type="text" name="telegram_id" class="form-control" placeholder="Contoh: HookageLegend" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Masukkan Password" required>
-            </div>
-            <button type="submit" class="btn">Login & Lanjutkan <i class="fas fa-arrow-right"></i></button>
-        </form>
-        <a href="register.php" class="link">Belum punya akun? Daftar di sini.</a>
-        <a href="https://web.hokage.web.id/" class="link" style="color: #aaa;"><i class="fas fa-arrow-left"></i> Kembali ke Beranda</a>
-    </div>
-</body>
-</html>
-EOF
-
-# 5. MEMBUAT SCRIPT CHECKOUT TRIPAY & JEMBATAN BOT (PORT 81)
-echo -e "\n[+] Membuat Script Checkout Tripay..."
-cat << 'EOF' > /var/www/html/checkout.php
-<?php
-$apiKey       = 'MASUKKAN_API_KEY_ANDA';
-$privateKey   = 'MASUKKAN_PRIVATE_KEY_ANDA';
-$merchantCode = 'MASUKKAN_MERCHANT_CODE_ANDA';
-
-// 1. FUNGSI CEK STATUS (DARI BOT)
-if (isset($_GET['action']) && $_GET['action'] == 'check_status') {
-    $reference = $_GET['reference'];
-    $payload = ['reference' => $reference];
-
-    $curl = curl_init();
-    curl_setopt_array($curl, [
-        CURLOPT_FRESH_CONNECT  => true,
-        CURLOPT_URL            => "https://tripay.co.id/api/transaction/check-status?".http_build_query($payload),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Authorization: Bearer '.$apiKey],
-    ]);
-
-    $response = curl_exec($curl);
-    curl_close($curl);
-    echo $response;
-    exit;
-}
-
-// 2. FUNGSI MEMBUAT TRANSAKSI
-$paket_nama  = $_REQUEST['nama_paket'] ?? 'Topup Saldo Bot';
-$paket_harga = (int)($_REQUEST['harga_paket'] ?? 0);
-$telegram_id = $_REQUEST['telegram_id'] ?? 'Unknown';
-$method      = $_REQUEST['method'] ?? 'QRISC'; 
-
-if ($paket_harga < 2000) {
-    if (isset($_REQUEST['json_response'])) {
-        echo json_encode(['success' => false, 'message' => 'Minimal pembayaran Rp 2.000']);
-        exit;
-    } else {
-        die("Minimal pembayaran adalah Rp 2.000");
-    }
-}
-
-$merchantRef = 'HL-' . time();
-$data = [
-    'method'         => $method,
-    'merchant_ref'   => $merchantRef,
-    'amount'         => $paket_harga,
-    'customer_name'  => $telegram_id, 
-    'customer_email' => 'buyer@hokage.web.id', 
-    'customer_phone' => '081234567890',        
-    'order_items'    => [[ 'sku' => 'VPN-01', 'name' => $paket_nama, 'price' => $paket_harga, 'quantity' => 1 ]],
-    'signature'      => hash_hmac('sha256', $merchantCode.$merchantRef.$paket_harga, $privateKey)
-];
-
-// Ganti ke Production
-$tripayEndpoint = 'https://tripay.co.id/api/transaction/create';
-$curl = curl_init();
-curl_setopt_array($curl, [
-    CURLOPT_FRESH_CONNECT  => true, CURLOPT_URL => $tripayEndpoint, CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER     => ['Authorization: Bearer '.$apiKey], CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS     => http_build_query($data)
-]);
-$response = curl_exec($curl); curl_close($curl);
-$result = json_decode($response);
-
-if ($result->success) { 
-    // Jika request dari Bot (butuh gambar QRIS langsung)
-    if (isset($_REQUEST['json_response'])) {
-        echo json_encode([
-            'success' => true,
-            'qr_data' => $result->data->qr_string,
-            'amount'  => $result->data->amount,
-            'ref'     => $result->data->reference
-        ]);
-        exit;
-    }
-    // Jika dari Web Form
-    header("Location: " . $result->data->checkout_url); 
-} else { 
-    if (isset($_REQUEST['json_response'])) {
-        echo json_encode(['success' => false, 'message' => $result->message]);
-    } else {
-        echo "Error: " . $result->message; 
-    }
-}
-?>
-EOF
-
-# 6. MEMBUAT CALLBACK UNTUK AUTO-SALDO (PORT 81)
-echo -e "\n[+] Membuat Script Callback Tripay..."
-cat << 'EOF' > /var/www/html/callback.php
-<?php
-$tripayPrivateKey = 'MASUKKAN_PRIVATE_KEY_ANDA';
-$botToken = '8537615254:AAH8TxILi9ZiMwCKqn_FI73SJmBqr2glPds';
-
-$json = file_get_contents("php://input");
-$callbackSignature = isset($_SERVER['HTTP_X_CALLBACK_SIGNATURE']) ? $_SERVER['HTTP_X_CALLBACK_SIGNATURE'] : '';
-
-$signature = hash_hmac('sha256', $json, $tripayPrivateKey);
-if ($signature !== $callbackSignature) {
-    die("Invalid Signature");
-}
-
-$data = json_decode($json);
-$event = $_SERVER['HTTP_X_CALLBACK_EVENT'];
-
-// Fungsi Kirim Notif Telegram
-function kirimPesanTelegram($chat_id, $pesan, $token) {
-    $url = "https://api.telegram.org/bot" . $token . "/sendMessage";
-    $data = ["chat_id" => $chat_id, "text" => $pesan, "parse_mode" => "HTML"];
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_exec($ch);
-    curl_close($ch);
-}
-
-if ($event == 'payment_status' && $data->status == 'PAID') {
-    // Ambil User ID dari customer_name (sesuai setup di checkout.php)
-    $chat_id = $data->customer_name; 
-    $amount  = $data->amount;        
-
-    try {
-        $db_path = '/usr/bin/kyt/database.db';
-        if (file_exists($db_path)) {
-            $db = new PDO("sqlite:$db_path");
-            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // Update Saldo (Pastikan nama tabel bot Anda benar 'users')
-            $sql = "UPDATE users SET balance = balance + :amount WHERE chat_id = :chat_id";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([':amount' => $amount, ':chat_id' => $chat_id]);
-
-            // Kirim notifikasi bot
-            $pesan = "✅ <b>TOPUP SALDO BERHASIL!</b>\n\n";
-            $pesan .= "Sebesar: <b>Rp " . number_format($amount, 0, ',', '.') . "</b>\n";
-            $pesan .= "Telah masuk ke akun Anda.";
-            kirimPesanTelegram($chat_id, $pesan, $botToken);
-        } else {
-            error_log("DB Bot Tidak Ditemukan");
-        }
-    } catch (PDOException $e) {
-        error_log("DB Error: " . $e->getMessage());
-    }
-}
-echo json_encode(['success' => true]);
-?>
-EOF
-
-# 7. MENAMBAHKAN KONFIGURASI PHP KE NGINX XRAY.CONF
+# 5. KONFIGURASI NGINX UNTUK PHP DI PORT 81
 echo -e "\n[+] Konfigurasi Nginx agar membaca PHP di Port 81..."
 if ! grep -q "location ~ \\.php\$" /etc/nginx/conf.d/xray.conf; then
     sed -i '/root \/var\/www\/html;/a \    index index.php index.html index.htm;\n    location ~ \\.php$ {\n        include snippets\/fastcgi-php.conf;\n        fastcgi_pass unix:\/var\/run\/php\/php7.4-fpm.sock;\n    }' /etc/nginx/conf.d/xray.conf
 fi
 
-# 8. MENGATUR IZIN FOLDER & DATABASE
+# 6. MENGATUR IZIN FOLDER & DATABASE
 echo -e "\n[+] Mengatur Perizinan Folder dan Database..."
+# Izin folder utama
 chown -R www-data:www-data /var/www/html /usr/share/nginx/html
 chmod -R 775 /var/www/html /usr/share/nginx/html
 
-# Izin untuk database Bot agar PHP bisa menulis saldo
+# Izin tulis penuh untuk database web (Register/Login)
+if [ -f "/var/www/html/web_users.db" ]; then
+    chmod 666 /var/www/html/web_users.db
+fi
+
+# Izin tulis penuh untuk database Bot Telegram (Auto-Saldo)
 if [ -f "/usr/bin/kyt/database.db" ]; then
     chown www-data:www-data /usr/bin/kyt/database.db
     chmod 666 /usr/bin/kyt/database.db
 fi
 
-# Restart Service
+# 7. RESTART SERVICE
+echo -e "\n[+] Merestart layanan Nginx & PHP..."
 nginx -t && systemctl restart nginx php7.4-fpm
 
 echo -e "${YELLOW}==================================================${NC}"
 echo -e "${GREEN}INSTALASI SELESAI!${NC}"
-echo -e "Silakan edit API Key (Mode Production) Anda di:"
-echo -e "- /var/www/html/checkout.php"
-echo -e "- /var/www/html/callback.php"
+echo -e "Catatan: Jika API Key Tripay di dalam file .zip belum diubah,"
+echo -e "silakan edit manual di: ${YELLOW}/var/www/html/checkout.php${NC}"
 echo -e "${YELLOW}==================================================${NC}"
