@@ -49,6 +49,7 @@ cat << 'EOF' > /usr/share/nginx/html/index.html
         
         nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 500; transition: 0.3s; cursor: pointer; }
         nav a:hover { color: var(--primary); }
+        
         .container { width: 90%; max-width: 1200px; margin: auto; padding: 40px 0; flex: 1; }
         .glass-panel { background: var(--glass-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 40px; }
         h1, h2, h3 { color: var(--primary); margin-bottom: 15px; }
@@ -59,17 +60,29 @@ cat << 'EOF' > /usr/share/nginx/html/index.html
         
         .btn { display: inline-block; background: var(--primary); color: #111; padding: 12px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; transition: 0.3s; border: none; cursor: pointer; width: 100%; text-align: center; }
         .btn:hover { background: #e67e22; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4); }
+        
         .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px; }
         .card { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 15px; padding: 30px; text-align: center; transition: 0.3s; }
         .card:hover { transform: translateY(-10px); border-color: var(--primary); }
         .price { font-size: 2rem; font-weight: bold; color: #fff; margin: 20px 0; }
         .card ul { list-style: none; margin-bottom: 25px; color: #ccc; }
         .card ul li { margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; color: #ddd; font-size: 0.9rem; }
         .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 1rem; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-control[readonly] { background: rgba(255,255,255,0.1); color: #aaa; cursor: not-allowed; }
+        
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 999; justify-content: center; align-items: center; }
         .modal-content { background: rgba(25, 35, 45, 0.9); border: 1px solid var(--primary); padding: 40px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; position: relative; box-shadow: 0 0 30px rgba(243, 156, 18, 0.2); }
-        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #aaa; }
-        footer { background: rgba(0,0,0,0.8); padding: 30px 5%; text-align: center; border-top: 1px solid var(--glass-border); }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #aaa; transition: 0.3s; }
+        .close-modal:hover { color: #fff; }
+        
+        .tos-box { font-size: 0.95rem; color: #ccc; }
+        footer { background: rgba(0,0,0,0.8); padding: 30px 5%; text-align: center; border-top: 1px solid var(--glass-border); margin-top: auto; }
+        
+        @media(max-width: 768px) { nav { display: none; } }
     </style>
 </head>
 <body>
@@ -84,10 +97,11 @@ cat << 'EOF' > /usr/share/nginx/html/index.html
             <a id="nav-login" onclick="bukaModalLogin()"><i class="fas fa-sign-in-alt"></i> Login</a>
             <span id="nav-user" style="display: none; margin-left: 20px; color: var(--primary); font-weight: bold;">
                 <i class="fas fa-user-circle"></i> <span id="nama-user"></span> 
-                <a onclick="logout()" style="color: #ff4757; margin-left: 10px; font-size: 0.8rem;"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+                <a onclick="logout()" style="color: #ff4757; margin-left: 10px; font-size: 0.8rem; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Keluar</a>
             </span>
         </nav>
     </header>
+
     <div class="container">
         <section class="hero glass-panel">
             <img src="logo.png" alt="Logo" class="hero-logo">
@@ -95,63 +109,148 @@ cat << 'EOF' > /usr/share/nginx/html/index.html
             <p>Akses internet tanpa batas, aman, dan cepat. Jaringan Private Server VIP dengan auto-injeksi terbaik di kelasnya.</p>
             <a href="#produk" class="btn" style="width: auto;">Lihat Layanan Kami</a>
         </section>
+
         <section id="produk">
             <h2 style="text-align: center;">Katalog Layanan</h2>
             <div class="pricing-grid">
                 <div class="card">
                     <h3>Paket Basic (30 Hari)</h3>
                     <div class="price">Rp 15.000</div>
-                    <ul><li><i class="fas fa-check"></i> 1 Akun VPN Premium</li><li><i class="fas fa-check"></i> Server SG / ID</li></ul>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 1 Akun VPN Premium</li>
+                        <li><i class="fas fa-check"></i> Server SG / ID</li>
+                    </ul>
                     <button onclick="prosesBeli('Basic VPN', 15000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
                 </div>
                 <div class="card" style="border-color: var(--primary);">
                     <h3>Paket VIP (30 Hari)</h3>
                     <div class="price">Rp 30.000</div>
-                    <ul><li><i class="fas fa-check"></i> Semua Fitur Basic</li><li><i class="fas fa-check"></i> Support Game Online (UDP)</li></ul>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Semua Fitur Basic</li>
+                        <li><i class="fas fa-check"></i> Support Game Online (UDP)</li>
+                    </ul>
                     <button onclick="prosesBeli('VIP VPN', 30000)" class="btn"><i class="fas fa-shopping-cart"></i> Beli Sekarang</button>
                 </div>
             </div>
         </section>
+
         <section id="checkout" class="glass-panel" style="margin-top: 50px; display: none;">
             <h2 style="text-align: center; margin-bottom: 20px;"><i class="fas fa-file-invoice-dollar"></i> Checkout Pesanan</h2>
             <form action="https://web.hokage.web.id:81/checkout.php" method="POST" style="max-width: 500px; margin: 0 auto;">
                 <input type="hidden" id="nama_paket" name="nama_paket">
                 <input type="hidden" id="harga_paket" name="harga_paket">
-                <div class="form-group"><label>ID Telegram / Username</label><input type="text" id="telegram_id" name="telegram_id" class="form-control" readonly required></div>
+                
                 <div class="form-group">
-                    <label>Metode Pembayaran</label>
+                    <label>ID Telegram / Username</label>
+                    <input type="text" id="telegram_id" name="telegram_id" class="form-control" readonly required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pilih Metode Pembayaran</label>
                     <select name="method" class="form-control" required style="background: rgba(0,0,0,0.5); color: #fff;">
                         <option value="" disabled selected>-- Pilih Pembayaran --</option>
                         <option value="QRISC" style="color: black;">QRIS (Dana, Gopay, OVO)</option>
                         <option value="OVO" style="color: black;">OVO E-Wallet</option>
                         <option value="BRIVA" style="color: black;">BRI Virtual Account</option>
+                        <option value="BCAVA" style="color: black;">BCA Virtual Account</option>
+                        <option value="MANDIRIVA" style="color: black;">Mandiri Virtual Account</option>
                         <option value="ALFAMART" style="color: black;">Alfamart</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Bayar Sekarang</button>
+                <button type="submit" class="btn" style="margin-top: 15px;">Lanjutkan Pembayaran Tripay <i class="fas fa-arrow-right"></i></button>
             </form>
         </section>
+
+        <section id="tos" class="glass-panel tos-box" style="margin-top: 50px;">
+            <h2>Ketentuan Layanan (TOS)</h2>
+            <ul>
+                <li>Dilarang keras menggunakan server untuk Hacking, Spamming, atau Torrenting.</li>
+                <li>Kami <b>TIDAK</b> memberikan pengembalian dana (refund) untuk layanan yang sudah sukses dibuat.</li>
+                <li>Transaksi diproses secara otomatis 24/7 setelah pembayaran dikonfirmasi oleh sistem Tripay.</li>
+                <li>Dengan melakukan pembelian, Anda dianggap telah menyetujui seluruh ketentuan ini.</li>
+            </ul>
+        </section>
     </div>
+
+    <footer>
+        <h3>Hokage Legend Store</h3>
+        <p style="color: #aaa; margin-bottom: 10px;">Email: faridaumiabi@gmail.com | Telegram: @HookageLegend</p>
+        <p style="font-size: 0.8rem; color: #888;">&copy; 2026 Hokage Legend. Sistem Pembayaran didukung oleh <strong>Tripay Payment Gateway</strong>.</p>
+    </footer>
+
     <div class="modal-overlay" id="loginModal">
         <div class="modal-content">
             <span class="close-modal" onclick="tutupModalLogin()">&times;</span>
-            <h2>Member Login</h2>
+            <h2 style="margin-bottom: 5px;"><i class="fas fa-user-lock"></i> Login Member</h2>
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 25px;">Silakan login untuk melanjutkan.</p>
             <form onsubmit="eksekusiLogin(event)">
-                <input type="text" id="login_user" class="form-control" placeholder="ID Telegram" required style="margin-top:20px;">
-                <input type="password" id="login_pass" class="form-control" placeholder="Password" required style="margin-top:10px;">
-                <button type="submit" class="btn" style="margin-top:20px;">Masuk</button>
+                <div class="form-group">
+                    <label>Username / ID Telegram (Tanpa @)</label>
+                    <input type="text" id="login_user" class="form-control" placeholder="Contoh: HookageLegend" required>
+                </div>
+                <div class="form-group">
+                    <label>Password / PIN</label>
+                    <input type="password" id="login_pass" class="form-control" placeholder="Masukkan Password" required>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 15px;">Masuk & Lanjutkan <i class="fas fa-sign-in-alt"></i></button>
             </form>
         </div>
     </div>
+
     <script>
-        let pT = null; let hT = null;
-        function cekStatusLogin() { const u = sessionStorage.getItem('hokage_user'); if(u) { document.getElementById('nav-login').style.display = 'none'; document.getElementById('nav-user').style.display = 'inline-block'; document.getElementById('nama-user').innerText = u; } }
-        function prosesBeli(n, h) { const u = sessionStorage.getItem('hokage_user'); if(!u) { pT = n; hT = h; document.getElementById('loginModal').style.display = 'flex'; } else { tampilkanCheckout(n, h, u); } }
-        function tampilkanCheckout(n, h, u) { document.getElementById('checkout').style.display = 'block'; document.getElementById('nama_paket').value = n; document.getElementById('harga_paket').value = h; document.getElementById('telegram_id').value = u; window.location.href = "#checkout"; }
-        function bukaModalLogin() { document.getElementById('loginModal').style.display = 'flex'; }
-        function tutupModalLogin() { document.getElementById('loginModal').style.display = 'none'; }
-        function eksekusiLogin(e) { e.preventDefault(); const u = document.getElementById('login_user').value; sessionStorage.setItem('hokage_user', u); tutupModalLogin(); cekStatusLogin(); if(pT && hT) tampilkanCheckout(pT, hT, u); }
-        function logout() { sessionStorage.removeItem('hokage_user'); location.reload(); }
+        let pT = null; 
+        let hT = null;
+        
+        function cekStatusLogin() { 
+            const u = sessionStorage.getItem('hokage_user'); 
+            if(u) { 
+                document.getElementById('nav-login').style.display = 'none'; 
+                document.getElementById('nav-user').style.display = 'inline-block'; 
+                document.getElementById('nama-user').innerText = u; 
+            } 
+        }
+        
+        function prosesBeli(n, h) { 
+            const u = sessionStorage.getItem('hokage_user'); 
+            if(!u) { 
+                pT = n; 
+                hT = h; 
+                document.getElementById('loginModal').style.display = 'flex'; 
+            } else { 
+                tampilkanCheckout(n, h, u); 
+            } 
+        }
+        
+        function tampilkanCheckout(n, h, u) { 
+            document.getElementById('checkout').style.display = 'block'; 
+            document.getElementById('nama_paket').value = n; 
+            document.getElementById('harga_paket').value = h; 
+            document.getElementById('telegram_id').value = u; 
+            window.location.href = "#checkout"; 
+        }
+        
+        function bukaModalLogin() { 
+            document.getElementById('loginModal').style.display = 'flex'; 
+        }
+        
+        function tutupModalLogin() { 
+            document.getElementById('loginModal').style.display = 'none'; 
+        }
+        
+        function eksekusiLogin(e) { 
+            e.preventDefault(); 
+            const u = document.getElementById('login_user').value; 
+            sessionStorage.setItem('hokage_user', u); 
+            tutupModalLogin(); 
+            cekStatusLogin(); 
+            if(pT && hT) tampilkanCheckout(pT, hT, u); 
+        }
+        
+        function logout() { 
+            sessionStorage.removeItem('hokage_user'); 
+            location.reload(); 
+        }
+        
         window.onload = cekStatusLogin;
     </script>
 </body>
