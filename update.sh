@@ -135,6 +135,8 @@ run_update() {
     # 6. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
     chmod +x /usr/local/sbin/*
+    dos2unix /usr/local/sbin/m-vless
+    dos2unix /usr/local/sbin/datauser-vless
 
     # ------------------------------------------
     # SETTING CRON JOB (XP UPDATE TERBARU)
