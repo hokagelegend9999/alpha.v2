@@ -210,6 +210,16 @@ ssa=$(grep -E "^#ss# " "/etc/xray/config.json" 2>/dev/null | cut -d ' ' -f 2 | s
 # 5. SSH (UID >= 1000)
 ssh1=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l)
 
+# =================================================================
+# PADDING OTOMATIS: Memaksa angka selalu rata kiri dengan 4 karakter
+# agar posisi garis pembatas (│) tidak bergeser maju/mundur.
+pad_ssh1=$(printf "%-4s" "$ssh1")
+pad_vma=$(printf "%-4s" "$vma")
+pad_vla=$(printf "%-4s" "$vla")
+pad_trb=$(printf "%-4s" "$trb")
+pad_ssa=$(printf "%-4s" "$ssa")
+# =================================================================
+
 KANAN="\033[1;32m<\033[1;33m<\033[1;31m<\033[1;31m$NC"
 KIRI="\033[1;32m>\033[1;33m>\033[1;31m>\033[1;31m$NC"
 r="\033[1;31m" 
@@ -217,7 +227,7 @@ a=" ${CYAN}ACCOUNT PREMIUM"
 
 echo -e " "
 print_gradient "══════════════════════════════════════════════════════════"
-print_gradient "		    AUTOSCRIPT VPS PREMIUM       "
+print_gradient "        AUTOSCRIPT VPS PREMIUM       "
 print_gradient "══════════════════════════════════════════════════════════"
 echo -e " $NC$y System OS ${NC}        $Blue=$NC $MODEL${NC}"
 echo -e " $NC$y ISP ${NC}              $Blue=$NC $ISP${NC}"
@@ -228,11 +238,12 @@ echo -e " $NC$y Sub Domain$NC        $Blue=$NC $domain${NC}"
 print_gradient "══════════════════════════════════════════════════════════"
 print_gradient "                   INFORMATION ACCOUNT ON VPS  "
 print_gradient "══════════════════════════════════════════════════════════"
-echo -e "$NC${y}│${z}$NC${z} SSH/OVPN/UDP${NC}   $y=$NC $ssh1   $NC${y}│$NC $NC${y}│ ${z}$NC${z} USER SCRIPT$NC${z} =$NC $user_script"
-echo -e "$NC${Blue}│${z}$NC${z} VMESS/WS/GRPC${NC}  $y=$NC $vma  $NC${Blue}│ $NC${Blue}│ ${z}$NC${z} IP ADDRESS ${z} =$NC $IPVPS${NC}"
-echo -e "$NC${r}│${z}$NC${z} VLESS/WS/GRPC${NC}  $y=$NC $vla   $NC${r}│$NC $NC${r}│ ${z}$NC${z} Server RAM ${NC} $Blue=$NC $tram MB $NC"
-echo -e "$NC${z}│${z}$NC${z} TROJAN/WS/GRPC${NC} $y=$NC $trb   $NC${z}│$NC $NC${z}│ ${z}$NC${z} Core Cpu ${NC}   $Blue=$NC $CORE${NC}"
-echo -e "$NC${green}│${z}$NC${z} SHADOW/WS/GRPC${NC} $y=$NC $ssa   $NC${green}│$NC $NC${green}│  ${z}$NC${z}Date ${NC}       $Blue=$NC $DATEVPS${NC}"
+# Penerapan variabel pad_ agar '=' dan '│' selalu sejajar rata
+echo -e "$NC${y}│${z}$NC${z} SSH/OVPN/UDP${NC}   $y=$NC $pad_ssh1 $NC${y}│$NC $NC${y}│ ${z}$NC${z} USER SCRIPT$NC${z} =$NC $user_script"
+echo -e "$NC${Blue}│${z}$NC${z} VMESS/WS/GRPC${NC}  $y=$NC $pad_vma $NC${Blue}│$NC $NC${Blue}│ ${z}$NC${z} IP ADDRESS ${z} =$NC $IPVPS${NC}"
+echo -e "$NC${r}│${z}$NC${z} VLESS/WS/GRPC${NC}  $y=$NC $pad_vla $NC${r}│$NC $NC${r}│ ${z}$NC${z} Server RAM ${NC} $Blue=$NC $tram MB $NC"
+echo -e "$NC${z}│${z}$NC${z} TROJAN/WS/GRPC${NC} $y=$NC $pad_trb $NC${z}│$NC $NC${z}│ ${z}$NC${z} Core Cpu ${NC}   $Blue=$NC $CORE${NC}"
+echo -e "$NC${green}│${z}$NC${z} SHADOW/WS/GRPC${NC} $y=$NC $pad_ssa $NC${green}│$NC $NC${green}│  ${z}$NC${z}Date ${NC}       $Blue=$NC $DATEVPS${NC}"
 print_gradient "══════════════════════════════════════════════════════════"
 print_gradient "══════════════════════════════════════════════════════════"
 echo -e " ${NC}$y SSH$NC     : $status_ssh" "  $y NGINX$NC      : $status_nginx" "    $y XRAY$NC    : $status_xray  $NC" 
@@ -242,10 +253,10 @@ print_gradient "═════════════════════�
 print_gradient "                   ALL FITUR SC TUNNELING "
 print_gradient "══════════════════════════════════════════════════════════"
 echo -e " ${z}$NC [${r}01${NC}]$green MENU SSH$NC         	$NC${y}│$NC  	[${r}06${NC}]$green MENU TRIAL$NC     ${z} $NC"
-echo -e " ${z}$NC [${r}02${NC}]$green MENU VMESS$NC       	$NC${Blue}│$NC  	[${r}07${NC}]$green SPEEDTEST$NC    ${z} $NC"
-echo -e " ${z}$NC [${r}03${NC}]$green MENU VLESS$NC       	$NC${r}│$NC  	[${r}08${NC}]$green MENU UTILITY$NC   ${z} $NC"
-echo -e " ${z}$NC [${r}04${NC}]$green MENU TROJAN$NC      	$NC${z}│$NC  	[${r}09${NC}]$green MENU ZIVPN$NC     ${z} $NC"
-echo -e " ${z}$NC [${r}05${NC}]$green MENU SSWS$NC        	$NC${green}│$NC  	[${r}10${NC}]$green CEK VPS$NC        ${z} $NC"
+echo -e " ${z}$NC [${r}02${NC}]$green MENU VMESS$NC        	$NC${Blue}│$NC  	[${r}07${NC}]$green SPEEDTEST$NC    ${z} $NC"
+echo -e " ${z}$NC [${r}03${NC}]$green MENU VLESS$NC        	$NC${r}│$NC  	[${r}08${NC}]$green MENU UTILITY$NC   ${z} $NC"
+echo -e " ${z}$NC [${r}04${NC}]$green MENU TROJAN$NC       	$NC${z}│$NC  	[${r}09${NC}]$green MENU ZIVPN$NC     ${z} $NC"
+echo -e " ${z}$NC [${r}05${NC}]$green MENU SSWS$NC         	$NC${green}│$NC  	[${r}10${NC}]$green CEK VPS$NC        ${z} $NC"
 echo -e " ${z}$NC [${r}11${NC}]$green MENU SLOW DNS$NC    	$NC${Blue}│$NC  	[${r}12${NC}]$green MENU WARP       ${z} $NC"
 print_gradient "══════════════════════════════════════════════════════════"
 echo -e ""
