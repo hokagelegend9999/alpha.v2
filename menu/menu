@@ -150,10 +150,20 @@ today=$(date +"%Y-%m-%d")
 d1=$(date -d "$valid" +%s)
 d2=$(date -d "$today" +%s)
 certifacate=$(((d1 - d2) / 86400))
+pink='\033[1;95m'
+blink_red='\033[5;31m'
+
 if [[ "$d1" -ge "$d2" ]]; then
-    sts="${green}Active${NC}"
+    if [[ "$certifacate" -le 7 ]]; then
+        # Jika sisa 7 hari ke bawah, HANYA tulisan Active yang berkedip merah
+        sts="${blink_red}Active${NC}"
+    else
+        # Jika hari masih panjang, tulisan Active berwarna hijau biasa
+        sts="${green}Active${NC}"
+    fi
 else
-    sts="${RED}Expired${NC}"
+    # Jika sudah expired, tulisan Expired berkedip merah
+    sts="${blink_red}Expired${NC}"
 fi
 tram=$( free -m | awk 'NR==2 {print $2}' )
 uram=$( free -m | awk 'NR==2 {print $3}' )
@@ -212,17 +222,17 @@ print_gradient "═════════════════════�
 echo -e " $NC$y System OS ${NC}        $Blue=$NC $MODEL${NC}"
 echo -e " $NC$y ISP ${NC}              $Blue=$NC $ISP${NC}"
 echo -e " $NC$y CITY ${NC}             $Blue=$NC $CITY${NC}"
-echo -e " $NC$y Server RAM ${NC}       $Blue=$NC $tram MB $NC"
-echo -e " $NC$y Core Cpu ${NC}         $Blue=$NC $CORE${NC}"
 echo -e " $NC$y Uptime Server ${NC}    $Blue=$NC $SERONLINE${NC}"
+echo -e " $NC$y Exp Script$NC        ${z}=$NC ${pink}$exp $y $certifacate Days${NC} ($sts)"
+echo -e " $NC$y Sub Domain$NC        $Blue=$NC $domain${NC}"
 print_gradient "══════════════════════════════════════════════════════════"
 print_gradient "                   INFORMATION ACCOUNT ON VPS  "
 print_gradient "══════════════════════════════════════════════════════════"
-echo -e "$NC${y}│${z}$NC${z} SSH/OVPN/UDP${NC}   $y=$NC $ssh1 $NC${y}│$NC  ${z}$NC${z} USER SCRIPT$NC${z} =$NC $user_script"
-echo -e "$NC${Blue}│${z}$NC${z} VMESS/WS/GRPC${NC}  $y=$NC $vma  $NC${Blue}│$NC  ${z}$NC${z} Exp Script$NC ${z} =$NC $exp $certifacate Days$NC $sts"
-echo -e "$NC${r}│${z}$NC${z} VLESS/WS/GRPC${NC}  $y=$NC $vla  $NC${r}│$NC  ${z}$NC${z} IP ADDRESS ${z} =$NC $IPVPS${NC}"
-echo -e "$NC${z}│${z}$NC${z} TROJAN/WS/GRPC${NC} $y=$NC $trb  $NC${z}│$NC  ${z}$NC${z} Date ${NC}       $Blue=$NC $DATEVPS${NC}"
-echo -e "$NC${green}│${z}$NC${z} SHADOW/WS/GRPC${NC} $y=$NC $ssa  $NC${green}│$NC  ${z}$NC${z} Domain ${NC}     $Blue=$NC $domain${NC}"
+echo -e "$NC${y}│${z}$NC${z} SSH/OVPN/UDP${NC}   $y=$NC $ssh1   $NC${y}│$NC $NC${y}│ ${z}$NC${z} USER SCRIPT$NC${z} =$NC $user_script"
+echo -e "$NC${Blue}│${z}$NC${z} VMESS/WS/GRPC${NC}  $y=$NC $vma  $NC${Blue}│ $NC${Blue}│ ${z}$NC${z} IP ADDRESS ${z} =$NC $IPVPS${NC}"
+echo -e "$NC${r}│${z}$NC${z} VLESS/WS/GRPC${NC}  $y=$NC $vla   $NC${r}│$NC $NC${r}│ ${z}$NC${z} Server RAM ${NC} $Blue=$NC $tram MB $NC"
+echo -e "$NC${z}│${z}$NC${z} TROJAN/WS/GRPC${NC} $y=$NC $trb   $NC${z}│$NC $NC${z}│ ${z}$NC${z} Core Cpu ${NC}   $Blue=$NC $CORE${NC}"
+echo -e "$NC${green}│${z}$NC${z} SHADOW/WS/GRPC${NC} $y=$NC $ssa   $NC${green}│$NC $NC${green}│  ${z}$NC${z}Date ${NC}       $Blue=$NC $DATEVPS${NC}"
 print_gradient "══════════════════════════════════════════════════════════"
 print_gradient "══════════════════════════════════════════════════════════"
 echo -e " ${NC}$y SSH$NC     : $status_ssh" "  $y NGINX$NC      : $status_nginx" "    $y XRAY$NC    : $status_xray  $NC" 
