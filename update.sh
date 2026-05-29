@@ -138,6 +138,138 @@ run_update() {
     dos2unix /usr/local/sbin/m-vless
     dos2unix /usr/local/sbin/datauser-vless
 
+    # 7. CREATE BOT NOTIFIER EXPIRED SCRIPT DI SBIN
+    cat >/usr/local/sbin/expired-notifier <<-'EOF'
+#!/bin/bash
+# ======================================================
+# HOKAGE LEGEND: AUTOMATED EXPIRED USER NOTIFIER
+# SUPPORT: SSH, VMESS, VLESS & TROJAN (XRAY)
+# ======================================================
+
+if [ -f "/usr/bin/kyt/var.txt" ]; then
+    source /usr/bin/kyt/var.txt
+else
+    echo "Error: File /usr/bin/kyt/var.txt tidak ditemukan!"
+    exit 1
+fi
+
+CHAT_ID="$ADMIN"
+domain=$(cat /etc/xray/domain 2>/dev/null || echo "$DOMAIN")
+IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || echo "Unknown IP")
+
+TEXT="⚠️ *HOKAGE LEGEND: LAPORAN USER EXPIRED* ⚠️%0A"
+TEXT+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━%0A"
+TEXT+="👉 *Domain:* \`$domain\`%0A"
+TEXT+="👉 *IP Server:* \`$IP\`%0A"
+TEXT+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━%0A%0A"
+
+count=0
+expired_list=""
+
+# ======================================================
+# 1. PENGECEKAN EXPIRED USER SSH
+# ======================================================
+while IFS=: read -r username _ uid _ _ _ shell; do
+    if [[ "$uid" -ge 1000 && "$username" != "nobody" ]]; then
+        exp_str=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
+        if [[ "$exp_str" != *"never"* ]]; then 
+            exp_date=$(date -d "$exp_str" +%s 2>/dev/null)
+            if [ ! -z "$exp_date" ]; then
+                today=$(date +%s)
+                diff=$(( (exp_date - today) / 86400 ))
+                if [[ $diff -lt 0 ]]; then
+                    exp_date_fmt=$(date -d "$exp_str" +"%d %b, %Y" 2>/dev/null)
+                    expired_list+="👤 *SSH:* \`$username\`%0A📅 *Expired:* $exp_date_fmt%0A--------------------------------%0A"
+                    count=$((count+1))
+                fi
+            fi
+        fi
+    fi
+done < /etc/passwd
+
+# ======================================================
+# 2. PENGECEKAN EXPIRED USER VMESS (XRAY)
+# ======================================================
+if [ -f "/etc/xray/config.json" ]; then
+    vmess_data=( $(grep '^###' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
+    for user in "${vmess_data[@]}"; do
+        exp_date_str=$(grep -wE "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq | head -1)
+        if [[ $exp_date_str =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            d1=$(date -d "$exp_date_str" +%s 2>/dev/null)
+            d2=$(date -d "$(date +%Y-%m-%d)" +%s)
+            if [ ! -z "$d1" ]; then
+                diff=$(( (d1 - d2) / 86400 ))
+                if [[ "$diff" -lt 0 ]]; then
+                    exp_date_fmt=$(date -d "$exp_date_str" +"%d %b, %Y" 2>/dev/null)
+                    expired_list+="👤 *VMESS:* \`$user\`%0A📅 *Expired:* $exp_date_fmt%0A--------------------------------%0A"
+                    count=$((count+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+# ======================================================
+# 3. PENGECEKAN EXPIRED USER VLESS (XRAY)
+# ======================================================
+if [ -f "/etc/xray/config.json" ]; then
+    vless_data=( $(grep '^#&' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
+    for user in "${vless_data[@]}"; do
+        exp_date_str=$(grep -wE "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq | head -1)
+        if [[ $exp_date_str =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            d1=$(date -d "$exp_date_str" +%s 2>/dev/null)
+            d2=$(date -d "$(date +%Y-%m-%d)" +%s)
+            if [ ! -z "$d1" ]; then
+                diff=$(( (d1 - d2) / 86400 ))
+                if [[ "$diff" -lt 0 ]]; then
+                    exp_date_fmt=$(date -d "$exp_date_str" +"%d %b, %Y" 2>/dev/null)
+                    expired_list+="👤 *VLESS:* \`$user\`%0A📅 *Expired:* $exp_date_fmt%0A--------------------------------%0A"
+                    count=$((count+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+# ======================================================
+# 4. PENGECEKAN EXPIRED USER TROJAN (XRAY)
+# ======================================================
+if [ -f "/etc/xray/config.json" ]; then
+    trojan_data=( $(grep '^#!' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
+    for user in "${trojan_data[@]}"; do
+        exp_date_str=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq | head -1)
+        if [[ $exp_date_str =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            d1=$(date -d "$exp_date_str" +%s 2>/dev/null)
+            d2=$(date -d "$(date +%Y-%m-%d)" +%s)
+            if [ ! -z "$d1" ]; then
+                diff=$(( (d1 - d2) / 86400 ))
+                if [[ "$diff" -lt 0 ]]; then
+                    exp_date_fmt=$(date -d "$exp_date_str" +"%d %b, %Y" 2>/dev/null)
+                    expired_list+="👤 *TROJAN:* \`$user\`%0A📅 *Expired:* $exp_date_fmt%0A--------------------------------%0A"
+                    count=$((count+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+# ======================================================
+# 5. PROSES PENGIRIMAN NOTIFIKASI
+# ======================================================
+if [ $count -gt 0 ]; then
+    TEXT+="$expired_list"
+    TEXT+="*Total Terdeteksi:* $count User Expired.%0A"
+    TEXT+=" Silakan lakukan pembersihan akun segera."
+    
+    curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+        -d "chat_id=$CHAT_ID" \
+        -d "text=$TEXT" \
+        -d "parse_mode=Markdown" > /dev/null
+fi
+EOF
+    chmod +x /usr/local/sbin/expired-notifier
+    dos2unix /usr/local/sbin/expired-notifier > /dev/null 2>&1
+
     # ------------------------------------------
     # SETTING CRON JOB (XP UPDATE TERBARU)
     # ------------------------------------------
@@ -170,6 +302,13 @@ EOF
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     0 0 * * * root /usr/local/sbin/xp
+END
+
+    # E. BOT EXPIRED NOTIFIER TELEGRAM (NEW)
+    cat >/etc/cron.d/expired_notifier <<-END
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    0 0 * * * root /usr/local/sbin/expired-notifier
 END
 
     # Restart Cron
