@@ -44,10 +44,12 @@ if systemctl is-active --quiet systemd-resolved; then
     systemctl disable systemd-resolved
 fi
 
-# 🛡️ FIX: Menghindari VPS kehilangan koneksi DNS (Tidak bisa resolve hostnames)
+# 🛡️ FIX: Menghindari VPS kehilangan koneksi DNS (Dikunci Permanen)
+chattr -i /etc/resolv.conf 2>/dev/null
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+chattr +i /etc/resolv.conf
 
 # 5. Konfigurasi Binary SlowDNS
 mkdir -p /etc/slowdns
