@@ -126,11 +126,9 @@ run_update() {
     wget -q -O /usr/local/sbin/menu https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/menu
     chmod +x /usr/local/sbin/menu
     
-    # 5. Buat Folder Usage
+    # 5. Buat Folder Usage (ZIVPN Dihapus)
     mkdir -p /etc/ssh/usage
-    mkdir -p /etc/zivpn/usage
     chmod 777 /etc/ssh/usage
-    chmod 777 /etc/zivpn/usage
     
     # 6. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
@@ -281,14 +279,7 @@ EOF
     * * * * * root /usr/local/sbin/ssh-accountant
 END
 
-    # B. XP-ZIVPN
-    cat >/etc/cron.d/xp_zivpn <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    0 0 * * * root /usr/local/sbin/xp-zivpn
-END
-
-    # C. LIMIT QUOTA
+    # B. LIMIT QUOTA
     rm -f /etc/cron.d/limit_quota
     sed -i "/limit-quota/d" /etc/crontab
     cat >/etc/cron.d/limit_quota <<-EOF
@@ -297,18 +288,25 @@ END
     */10 * * * * root /usr/local/sbin/limit-quota
 EOF
 
-    # D. XP GENERAL (AUTO DELETE YANG DIPERBAIKI)
+    # C. XP GENERAL (AUTO DELETE)
     cat >/etc/cron.d/xp_all <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     0 0 * * * root /usr/local/sbin/xp
 END
 
-    # E. BOT EXPIRED NOTIFIER TELEGRAM (NEW)
+    # D. BOT EXPIRED NOTIFIER TELEGRAM
     cat >/etc/cron.d/expired_notifier <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     0 0 * * * root /usr/local/sbin/expired-notifier
+END
+
+    # E. LIMIT IP SSH (BOT NOTIFIER MULTI-LOGIN) - NEW
+    cat >/etc/cron.d/limit_ip_ssh <<-END
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    */5 * * * * root /usr/local/sbin/limit-ip-ssh
 END
 
     # Restart Cron
