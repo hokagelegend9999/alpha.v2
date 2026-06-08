@@ -135,6 +135,7 @@ run_update() {
     chmod +x /usr/local/sbin/*
     dos2unix /usr/local/sbin/m-vless
     dos2unix /usr/local/sbin/datauser-vless
+    dos2unix /usr/local/sbin/delexp
 
     # 7. CREATE BOT NOTIFIER EXPIRED SCRIPT DI SBIN
     cat >/usr/local/sbin/expired-notifier <<-'EOF'
@@ -307,6 +308,13 @@ END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     */5 * * * * root /usr/local/sbin/limit-ip-ssh
+END
+
+    # F. DELEXP (AUTO DELETE EXPIRED) - DITAMBAHKAN
+    cat >/etc/cron.d/delexp <<-END
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    0 0 * * * root /usr/local/sbin/delexp
 END
 
     # Restart Cron
