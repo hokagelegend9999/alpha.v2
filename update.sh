@@ -127,8 +127,8 @@ run_update() {
     chmod +x /usr/local/sbin/menu
     
     # 5. Buat Folder Usage (ZIVPN Dihapus)
-    mkdir -p /etc/ssh/usage
-    chmod 777 /etc/ssh/usage
+    mkdir -p /etc/ssh/usage_db
+    chmod 777 /etc/ssh/usage_db
     
     # 6. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
@@ -136,6 +136,57 @@ run_update() {
     dos2unix /usr/local/sbin/m-vless
     dos2unix /usr/local/sbin/datauser-vless
     dos2unix /usr/local/sbin/delexp
+
+    # ======================================================
+    # NEW: CREATE REKAM USAGE DAEMON
+    # ======================================================
+    cat >/usr/local/sbin/rekam-usage <<-'EOF'
+#!/bin/bash
+# ==========================================
+# AUTO ACCOUNTING & BANDWIDTH TRACKER
+# Menabung Kuota Tanpa Reset
+# ==========================================
+USAGE_DB="/etc/ssh/usage_db"
+mkdir -p "$USAGE_DB"
+
+# Ambil total byte langsung dari Iptables Kernel
+IPTABLES_DUMP=$(iptables-save -c 2>/dev/null)
+
+# Loop ke semua user VPN
+awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | while read user; do
+    
+    # 1. Baca byte real-time dari iptables saat ini
+    live_bytes=$(echo "$IPTABLES_DUMP" | grep -w "uid-owner $user" | sed -n 's/^\[[0-9]*:\([0-9]*\)\].*/\1/p' | awk '{sum+=$1} END {print sum}')
+    [[ -z "$live_bytes" ]] && live_bytes=0
+
+    db_file="$USAGE_DB/$user.total"
+    last_file="$USAGE_DB/$user.last"
+
+    total_tabungan=0
+    last_recorded=0
+
+    [[ -f "$db_file" ]] && total_tabungan=$(cat "$db_file")
+    [[ -f "$last_file" ]] && last_recorded=$(cat "$last_file")
+
+    # 2. LOGIKA PENABUNGAN CERDAS
+    if (( live_bytes >= last_recorded )); then
+        # Jika user masih konek, tambahkan hanya selisihnya
+        diff=$((live_bytes - last_recorded))
+        total_tabungan=$((total_tabungan + diff))
+    else
+        # Jika live_bytes lebih kecil, berarti server habis REBOOT atau iptables reset
+        # Kita tambahkan utuh live_bytes yang baru ke dalam tabungan
+        total_tabungan=$((total_tabungan + live_bytes))
+    fi
+
+    # 3. Simpan permanen ke database
+    echo "$total_tabungan" > "$db_file"
+    echo "$live_bytes" > "$last_file"
+
+done
+EOF
+    chmod +x /usr/local/sbin/rekam-usage
+    dos2unix /usr/local/sbin/rekam-usage > /dev/null 2>&1
 
     # 7. CREATE BOT NOTIFIER EXPIRED SCRIPT DI SBIN
     cat >/usr/local/sbin/expired-notifier <<-'EOF'
@@ -315,6 +366,13 @@ END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     0 0 * * * root /usr/local/sbin/delexp
+END
+
+    # G. REKAM USAGE DAEMON (PENABUNG KUOTA)
+    cat >/etc/cron.d/rekam_usage <<-END
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    * * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1
 END
 
     # Restart Cron
