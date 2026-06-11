@@ -361,11 +361,11 @@ END
     */5 * * * * root /usr/local/sbin/limit-ip-ssh
 END
 
-    # F. DELEXP (AUTO DELETE EXPIRED) - DITAMBAHKAN
+    # F. DELEXP (AUTO DELETE EXPIRED) - Jeda 10 Menit
     cat >/etc/cron.d/delexp <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    0 0 * * * root /usr/local/sbin/delexp
+    10 0 * * * root /usr/local/sbin/delexp
 END
 
     # G. REKAM USAGE DAEMON (PENABUNG KUOTA)
