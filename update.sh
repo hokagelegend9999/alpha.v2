@@ -321,17 +321,27 @@ EOF
     dos2unix /usr/local/sbin/expired-notifier > /dev/null 2>&1
 
     # ======================================================
-    # 8. CREATE AUTO DELETE TROJAN SCRIPT (CLI VERSION)
+    # 8. CREATE AUTO DELETE TROJAN SCRIPT (DENGAN TELEGRAM)
     # ======================================================
     cat >/usr/local/sbin/xp-trojan <<-'EOF'
 #!/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# 1. Load Data Telegram
+if [ -f "/usr/bin/kyt/var.txt" ]; then
+    source /usr/bin/kyt/var.txt
+else
+    exit 1
+fi
+
+CHAT_ID="$ADMIN"
 BACKUP_FILE="/etc/xray/trojan_backup"
 [[ ! -f "$BACKUP_FILE" ]] && touch "$BACKUP_FILE"
 
 data=( $(grep '^#!' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
 now=$(date +"%Y-%m-%d")
-found=0
+count=0
+deleted_list=""
 
 for user in "${data[@]}"; do
     exp=$(grep -w "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq | head -1)
@@ -357,12 +367,31 @@ for user in "${data[@]}"; do
         rm -f "/var/www/html/trojan-$user.txt" 2>/dev/null
         
         echo "Expired- Trojan Username : $user - Exp: $exp - Dihapus: $now" >> /usr/local/bin/deleteduser
-        found=1
+        
+        # Rekap user yang terhapus untuk notifikasi
+        deleted_list+="  ✅ <b>${user}</b>  <i>(${exp})</i>"$'\n'
+        count=$((count+1))
     fi
 done
 
-if [[ $found -eq 1 ]]; then
+# 2. Restart Xray & Kirim Telegram jika ada yang terhapus
+if [[ $count -gt 0 ]]; then
     systemctl restart xray 2>/dev/null
+    
+    TEXT="╭━━━━━◈◆◈━━━━━╮%0A"
+    TEXT+="  <b>✅ PENGHAPUSAN TROJAN</b>%0A"
+    TEXT+="╰━━━━━◈◆◈━━━━━╯%0A%0A"
+    TEXT+="<b>📊 $count User Expired Dihapus:</b>%0A%0A"
+    TEXT+="$deleted_list%0A"
+    TEXT+="╭─────────────────╮%0A"
+    TEXT+="  <b>🔒 Akun di-archive</b>%0A"
+    TEXT+="  <b>🗑️ Database bersih</b>%0A"
+    TEXT+="╰─────────────────╯"
+    
+    curl -s --max-time 5 -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+        -d chat_id="${CHAT_ID}" \
+        --data-urlencode text="${TEXT}" \
+        -d parse_mode="html" > /dev/null 2>&1
 fi
 EOF
     chmod +x /usr/local/sbin/xp-trojan
