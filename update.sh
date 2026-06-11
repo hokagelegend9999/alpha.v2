@@ -344,10 +344,10 @@ EOF
     cat >/etc/cron.d/xp_all <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    0 0 * * * root /usr/local/sbin/xp
+    10 0 * * * root /usr/local/sbin/xp
 END
 
-    # D. BOT EXPIRED NOTIFIER TELEGRAM
+    # D. BOT EXPIRED NOTIFIER TELEGRAM (Tetap jam 00:00 agar laporan valid)
     cat >/etc/cron.d/expired_notifier <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
