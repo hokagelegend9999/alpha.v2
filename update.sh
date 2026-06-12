@@ -327,7 +327,6 @@ EOF
 #!/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# 1. Load Data Telegram
 if [ -f "/usr/bin/kyt/var.txt" ]; then
     source /usr/bin/kyt/var.txt
 else
@@ -368,25 +367,29 @@ for user in "${data[@]}"; do
         
         echo "Expired- Trojan Username : $user - Exp: $exp - Dihapus: $now" >> /usr/local/bin/deleteduser
         
-        # Rekap user yang terhapus untuk notifikasi
-        deleted_list+="  ✅ <b>${user}</b>  <i>(${exp})</i>"$'\n'
+        deleted_list+=" ├─ ✅ <code>${user}</code> <i>(${exp})</i>%0A"
         count=$((count+1))
     fi
 done
 
-# 2. Restart Xray & Kirim Telegram jika ada yang terhapus
 if [[ $count -gt 0 ]]; then
     systemctl restart xray 2>/dev/null
     
-    TEXT="╭━━━━━◈◆◈━━━━━╮%0A"
-    TEXT+="  <b>✅ PENGHAPUSAN TROJAN</b>%0A"
-    TEXT+="╰━━━━━◈◆◈━━━━━╯%0A%0A"
-    TEXT+="<b>📊 $count User Expired Dihapus:</b>%0A%0A"
-    TEXT+="$deleted_list%0A"
-    TEXT+="╭─────────────────╮%0A"
-    TEXT+="  <b>🔒 Akun di-archive</b>%0A"
-    TEXT+="  <b>🗑️ Database bersih</b>%0A"
-    TEXT+="╰─────────────────╯"
+    waktu=$(date +'%d %b %Y, %H:%M WIB')
+    TEXT="╭━━━━━━━◈◆◈━━━━━━━╮%0A"
+    TEXT+="   ♻️ <b>𝗔𝗨𝗧𝗢-𝗖𝗟𝗘𝗔𝗡𝗨𝗣 𝗧𝗥𝗢𝗝𝗔𝗡</b> ♻️%0A"
+    TEXT+="╰━━━━━━━◈◆◈━━━━━━━╯%0A%0A"
+    TEXT+="📊 <b>Status:</b> Sukses%0A"
+    TEXT+="🗑️ <b>Total Dihapus:</b> $count Akun%0A%0A"
+    TEXT+="📋 <b>Detail Penghapusan:</b>%0A"
+    TEXT+="╭───────────────────%0A"
+    TEXT+="$deleted_list"
+    TEXT+="╰───────────────────%0A%0A"
+    TEXT+="<b>Keterangan Pembersihan:</b>%0A"
+    TEXT+=" └ 🔒 <i>Akun di-archive</i>%0A"
+    TEXT+=" └ 🗑️ <i>Database bersih</i>%0A%0A"
+    TEXT+="⚙️ <i>HOKAGE LEGEND SYSTEM</i>%0A"
+    TEXT+="🕒 <i>$waktu</i>"
     
     curl -s --max-time 5 -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
         -d chat_id="${CHAT_ID}" \
@@ -397,18 +400,98 @@ EOF
     chmod +x /usr/local/sbin/xp-trojan
     dos2unix /usr/local/sbin/xp-trojan > /dev/null 2>&1
 
+    # ======================================================
+    # 9. CREATE AUTO DELETE VMESS SCRIPT (DENGAN TELEGRAM)
+    # ======================================================
+    cat >/usr/local/sbin/xp-vmess <<-'EOF'
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+if [ -f "/usr/bin/kyt/var.txt" ]; then
+    source /usr/bin/kyt/var.txt
+else
+    exit 1
+fi
+
+CHAT_ID="$ADMIN"
+BACKUP_FILE="/etc/xray/vmess_backup"
+[[ ! -f "$BACKUP_FILE" ]] && touch "$BACKUP_FILE"
+
+data=( $(grep '^###' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
+now=$(date +"%Y-%m-%d")
+count=0
+deleted_list=""
+
+for user in "${data[@]}"; do
+    exp=$(grep -w "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq | head -1)
+    if [[ -z "$exp" ]]; then continue; fi
+
+    d1=$(date -d "$exp" +%s 2>/dev/null)
+    d2=$(date -d "$now" +%s)
+    
+    if [[ "$d1" -lt "$d2" ]]; then
+        uuid=$(grep -wE "^### $user" -A 3 /etc/xray/config.json | grep '"id"' | awk -F '"' '{print $4}' | head -n 1)
+        if [[ -n "$uuid" ]]; then
+            if ! grep -q "^$user " "$BACKUP_FILE"; then
+                echo "$user $uuid" >> "$BACKUP_FILE"
+            fi
+        fi
+
+        user_safe=$(echo "$user" | sed 's/\//\\\//g')
+        sed -i "/^### $user_safe /,/^},{/d" /etc/xray/config.json
+        
+        sed -i "/\b$user\b/d" /etc/vmess/.vmess.db 2>/dev/null
+        rm -f "/etc/vmess/$user" 2>/dev/null
+        rm -f "/etc/xray/$user-tls.json" 2>/dev/null
+        rm -f "/etc/hokage/limit/vmess/ip/$user" 2>/dev/null
+        rm -f "/etc/kyt/limit/vmess/ip/$user" 2>/dev/null
+        rm -f "/var/www/html/vmess-$user.txt" 2>/dev/null
+        
+        echo "Expired- VMess Username : $user - Exp: $exp - Dihapus: $now" >> /usr/local/bin/deleteduser
+        
+        deleted_list+=" ├─ ✅ <code>${user}</code> <i>(${exp})</i>%0A"
+        count=$((count+1))
+    fi
+done
+
+if [[ $count -gt 0 ]]; then
+    systemctl restart xray 2>/dev/null
+    
+    waktu=$(date +'%d %b %Y, %H:%M WIB')
+    TEXT="╭━━━━━━━◈◆◈━━━━━━━╮%0A"
+    TEXT+="   ♻️ <b>𝗔𝗨𝗧𝗢-𝗖𝗟𝗘𝗔𝗡𝗨𝗣 𝗩𝗠𝗘𝗦𝗦</b> ♻️%0A"
+    TEXT+="╰━━━━━━━◈◆◈━━━━━━━╯%0A%0A"
+    TEXT+="📊 <b>Status:</b> Sukses%0A"
+    TEXT+="🗑️ <b>Total Dihapus:</b> $count Akun%0A%0A"
+    TEXT+="📋 <b>Detail Penghapusan:</b>%0A"
+    TEXT+="╭───────────────────%0A"
+    TEXT+="$deleted_list"
+    TEXT+="╰───────────────────%0A%0A"
+    TEXT+="<b>Keterangan Pembersihan:</b>%0A"
+    TEXT+=" └ 🔒 <i>UUID di-archive</i>%0A"
+    TEXT+=" └ 🗑️ <i>File cache & web dihapus</i>%0A%0A"
+    TEXT+="⚙️ <i>HOKAGE LEGEND SYSTEM</i>%0A"
+    TEXT+="🕒 <i>$waktu</i>"
+    
+    curl -s --max-time 5 -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+        -d chat_id="${CHAT_ID}" \
+        --data-urlencode text="${TEXT}" \
+        -d parse_mode="html" > /dev/null 2>&1
+fi
+EOF
+    chmod +x /usr/local/sbin/xp-vmess
+    dos2unix /usr/local/sbin/xp-vmess > /dev/null 2>&1
+
     # ------------------------------------------
     # SETTING CRON JOB (XP UPDATE TERBARU)
     # ------------------------------------------
 
-    # A. SSH ACCOUNTANT
     cat >/etc/cron.d/ssh_accountant <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     * * * * * root /usr/local/sbin/ssh-accountant
 END
 
-    # B. LIMIT QUOTA
     rm -f /etc/cron.d/limit_quota
     sed -i "/limit-quota/d" /etc/crontab
     cat >/etc/cron.d/limit_quota <<-EOF
@@ -417,49 +500,48 @@ END
     */10 * * * * root /usr/local/sbin/limit-quota
 EOF
 
-    # C. XP GENERAL (AUTO DELETE)
     cat >/etc/cron.d/xp_all <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     10 0 * * * root /usr/local/sbin/xp
 END
 
-    # D. BOT EXPIRED NOTIFIER TELEGRAM (Tetap jam 00:00 agar laporan valid)
     cat >/etc/cron.d/expired_notifier <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     0 0 * * * root /usr/local/sbin/expired-notifier
 END
 
-    # E. LIMIT IP SSH (BOT NOTIFIER MULTI-LOGIN) - NEW
     cat >/etc/cron.d/limit_ip_ssh <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     */5 * * * * root /usr/local/sbin/limit-ip-ssh
 END
 
-    # F. DELEXP (AUTO DELETE EXPIRED) - Jeda 10 Menit
     cat >/etc/cron.d/delexp <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     10 0 * * * root /usr/local/sbin/delexp
 END
 
-    # G. REKAM USAGE DAEMON (PENABUNG KUOTA)
     cat >/etc/cron.d/rekam_usage <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     * * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1
 END
 
-    # H. AUTO DELETE TROJAN (Baru Ditambahkan)
     cat >/etc/cron.d/xp_trojan_auto <<-END
     SHELL=/bin/sh
     PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
     10 0 * * * root /usr/local/sbin/xp-trojan
 END
 
-    # Restart Cron
+    cat >/etc/cron.d/xp_vmess_auto <<-END
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    10 0 * * * root /usr/local/sbin/xp-vmess
+END
+
     service cron restart
 }
 
@@ -476,7 +558,6 @@ echo -e ""
 echo -e "  ${ORANGE}Please wait while we update your resources...${NC}"
 echo -e ""
 
-# Jalankan Animasi Update
 hokage_anim 'run_update'
 
 echo -e ""
