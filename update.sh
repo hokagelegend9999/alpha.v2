@@ -126,76 +126,25 @@ run_update() {
     wget -q -O /usr/local/sbin/menu https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/menu
     chmod +x /usr/local/sbin/menu
     
-    # 5. Buat Folder Usage
+    # 5. Buat Folder Usage (SSH & Xray)
     mkdir -p /etc/ssh/usage_db
     chmod 777 /etc/ssh/usage_db
+    mkdir -p /etc/xray/quota_lifetime
+    chmod 777 /etc/xray/quota_lifetime
     
     # 6. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
     chmod +x /usr/local/sbin/*
-    dos2unix /usr/local/sbin/m-vless
-    dos2unix /usr/local/sbin/datauser-vless
-    dos2unix /usr/local/sbin/delexp
+    dos2unix /usr/local/sbin/m-vless >/dev/null 2>&1
+    dos2unix /usr/local/sbin/datauser-vless >/dev/null 2>&1
+    dos2unix /usr/local/sbin/delexp >/dev/null 2>&1
+    dos2unix /usr/local/sbin/rekam-usage >/dev/null 2>&1
 
     # ======================================================
-    # NEW: CREATE REKAM USAGE DAEMON
-    # ======================================================
-    cat >/usr/local/sbin/rekam-usage <<-'EOF'
-#!/bin/bash
-# ==========================================
-# AUTO ACCOUNTING & BANDWIDTH TRACKER
-# Menabung Kuota Tanpa Reset
-# ==========================================
-USAGE_DB="/etc/ssh/usage_db"
-mkdir -p "$USAGE_DB"
-
-# Ambil total byte langsung dari Iptables Kernel
-IPTABLES_DUMP=$(iptables-save -c 2>/dev/null)
-
-# Loop ke semua user VPN
-awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | while read user; do
-    
-    # 1. Baca byte real-time dari iptables saat ini
-    live_bytes=$(echo "$IPTABLES_DUMP" | grep -w "uid-owner $user" | sed -n 's/^\[[0-9]*:\([0-9]*\)\].*/\1/p' | awk '{sum+=$1} END {print sum}')
-    [[ -z "$live_bytes" ]] && live_bytes=0
-
-    db_file="$USAGE_DB/$user.total"
-    last_file="$USAGE_DB/$user.last"
-
-    total_tabungan=0
-    last_recorded=0
-
-    [[ -f "$db_file" ]] && total_tabungan=$(cat "$db_file")
-    [[ -f "$last_file" ]] && last_recorded=$(cat "$last_file")
-
-    # 2. LOGIKA PENABUNGAN CERDAS
-    if (( live_bytes >= last_recorded )); then
-        # Jika user masih konek, tambahkan hanya selisihnya
-        diff=$((live_bytes - last_recorded))
-        total_tabungan=$((total_tabungan + diff))
-    else
-        # Jika live_bytes lebih kecil, berarti server habis REBOOT atau iptables reset
-        # Kita tambahkan utuh live_bytes yang baru ke dalam tabungan
-        total_tabungan=$((total_tabungan + live_bytes))
-    fi
-
-    # 3. Simpan permanen ke database
-    echo "$total_tabungan" > "$db_file"
-    echo "$live_bytes" > "$last_file"
-
-done
-EOF
-    chmod +x /usr/local/sbin/rekam-usage
-    dos2unix /usr/local/sbin/rekam-usage > /dev/null 2>&1
-
     # 7. CREATE BOT NOTIFIER EXPIRED SCRIPT DI SBIN
+    # ======================================================
     cat >/usr/local/sbin/expired-notifier <<-'EOF'
 #!/bin/bash
-# ======================================================
-# HOKAGE LEGEND: AUTOMATED EXPIRED USER NOTIFIER
-# SUPPORT: SSH, VMESS, VLESS & TROJAN (XRAY)
-# ======================================================
-
 if [ -f "/usr/bin/kyt/var.txt" ]; then
     source /usr/bin/kyt/var.txt
 else
@@ -216,9 +165,7 @@ TEXT+="━━━━━━━━━━━━━━━━━━━━━━━━�
 count=0
 expired_list=""
 
-# ======================================================
-# 1. PENGECEKAN EXPIRED USER SSH
-# ======================================================
+# SSH Pengecekan
 while IFS=: read -r username _ uid _ _ _ shell; do
     if [[ "$uid" -ge 1000 && "$username" != "nobody" ]]; then
         exp_str=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
@@ -237,9 +184,7 @@ while IFS=: read -r username _ uid _ _ _ shell; do
     fi
 done < /etc/passwd
 
-# ======================================================
-# 2. PENGECEKAN EXPIRED USER VMESS (XRAY)
-# ======================================================
+# VMESS Pengecekan
 if [ -f "/etc/xray/config.json" ]; then
     vmess_data=( $(grep '^###' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
     for user in "${vmess_data[@]}"; do
@@ -259,9 +204,7 @@ if [ -f "/etc/xray/config.json" ]; then
     done
 fi
 
-# ======================================================
-# 3. PENGECEKAN EXPIRED USER VLESS (XRAY)
-# ======================================================
+# VLESS Pengecekan
 if [ -f "/etc/xray/config.json" ]; then
     vless_data=( $(grep '^#&' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
     for user in "${vless_data[@]}"; do
@@ -281,9 +224,7 @@ if [ -f "/etc/xray/config.json" ]; then
     done
 fi
 
-# ======================================================
-# 4. PENGECEKAN EXPIRED USER TROJAN (XRAY)
-# ======================================================
+# TROJAN Pengecekan
 if [ -f "/etc/xray/config.json" ]; then
     trojan_data=( $(grep '^#!' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq) )
     for user in "${trojan_data[@]}"; do
@@ -303,9 +244,7 @@ if [ -f "/etc/xray/config.json" ]; then
     done
 fi
 
-# ======================================================
-# 5. PROSES PENGIRIMAN NOTIFIKASI
-# ======================================================
+# Eksekusi Notifikasi
 if [ $count -gt 0 ]; then
     TEXT+="$expired_list"
     TEXT+="*Total Terdeteksi:* $count User Expired.%0A"
@@ -321,7 +260,7 @@ EOF
     dos2unix /usr/local/sbin/expired-notifier > /dev/null 2>&1
 
     # ======================================================
-    # 8. CREATE AUTO DELETE TROJAN SCRIPT (DENGAN TELEGRAM)
+    # 8. CREATE AUTO DELETE TROJAN SCRIPT (FIXED BUGS)
     # ======================================================
     cat >/usr/local/sbin/xp-trojan <<-'EOF'
 #!/bin/bash
@@ -362,34 +301,33 @@ for user in "${data[@]}"; do
         
         sed -i "/\b$user\b/d" /etc/trojan/.trojan.db 2>/dev/null
         rm -f "/etc/trojan/$user" 2>/dev/null
-        rm -f "/etc/hokage/limit/trojan/ip/$user" 2>/dev/null
+        rm -f "/etc/kyt/limit/trojan/ip/$user" 2>/dev/null
         rm -f "/var/www/html/trojan-$user.txt" 2>/dev/null
         
         echo "Expired- Trojan Username : $user - Exp: $exp - Dihapus: $now" >> /usr/local/bin/deleteduser
         
-        deleted_list+=" ├─ ✅ <code>${user}</code> <i>(${exp})</i>%0A"
+        deleted_list+=" └─ 👤 <code>${user}</code> (Exp: <i>${exp}</i>)\n"
         count=$((count+1))
     fi
 done
 
 if [[ $count -gt 0 ]]; then
     systemctl restart xray 2>/dev/null
-    
     waktu=$(date +'%d %b %Y, %H:%M WIB')
-    TEXT="╭━━━━━━━◈◆◈━━━━━━━╮%0A"
-    TEXT+="   ♻️ <b>𝗔𝗨𝗧𝗢-𝗖𝗟𝗘𝗔𝗡𝗨𝗣 𝗧𝗥𝗢𝗝𝗔𝗡</b> ♻️%0A"
-    TEXT+="╰━━━━━━━◈◆◈━━━━━━━╯%0A%0A"
-    TEXT+="📊 <b>Status:</b> Sukses%0A"
-    TEXT+="🗑️ <b>Total Dihapus:</b> $count Akun%0A%0A"
-    TEXT+="📋 <b>Detail Penghapusan:</b>%0A"
-    TEXT+="╭───────────────────%0A"
-    TEXT+="$deleted_list"
-    TEXT+="╰───────────────────%0A%0A"
-    TEXT+="<b>Keterangan Pembersihan:</b>%0A"
-    TEXT+=" └ 🔒 <i>Akun di-archive</i>%0A"
-    TEXT+=" └ 🗑️ <i>Database bersih</i>%0A%0A"
-    TEXT+="⚙️ <i>HOKAGE LEGEND SYSTEM</i>%0A"
-    TEXT+="🕒 <i>$waktu</i>"
+    
+    TEXT=$(echo -e "❖━ <b>AUTO-CLEANUP TROJAN</b> ━❖
+━━━━━━━━━━━━━━━━━━━━
+✅ <b>Status:</b> Selesai & Bersih
+🗑 <b>Total Dihapus:</b> $count Akun
+
+📝 <b>Daftar Akun Expired:</b>
+${deleted_list}
+⚙️ <b>Tindakan Sistem:</b>
+» <i>Akses diputus (Config di-archive)</i>
+» <i>Database & Cache dibersihkan</i>
+
+🤖 <b>HOKAGE LEGEND SYSTEM</b>
+🕒 <i>$waktu</i>")
     
     curl -s --max-time 5 -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
         -d chat_id="${CHAT_ID}" \
@@ -506,21 +444,18 @@ EOF
     sed -i "/limit-quota/d" /etc/crontab 2>/dev/null
 
     # 2. Buat Crontab Baru (Tanpa Duplikasi)
-    
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/clean-trial
     echo "*/3 * * * * root /usr/local/sbin/clean-trial" >> /etc/cron.d/clean-trial
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/daily_reboot
     echo "0 5 * * * root /sbin/reboot" >> /etc/cron.d/daily_reboot
 
-    # HANYA GUNAKAN DELEXP (xp_all dihapus agar tidak double notifikasi)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/delexp
     echo "10 0 * * * root /usr/local/sbin/delexp" >> /etc/cron.d/delexp
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/expired_notifier
     echo "0 0 * * * root /usr/local/sbin/expired-notifier" >> /etc/cron.d/expired_notifier
 
-    # HANYA GUNAKAN SATU LIMIT IP SSH (Duplikat dihapus agar CPU aman)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_ip_ssh
     echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh
 
@@ -548,20 +483,8 @@ EOF
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vmess_auto
     echo "10 0 * * * root /usr/local/sbin/xp-vmess" >> /etc/cron.d/xp_vmess_auto
 
-    # 3. SET PERMISSIONS (Disesuaikan dengan file yang tersisa)
-    chmod 644 /etc/cron.d/clean-trial
-    chmod 644 /etc/cron.d/daily_reboot
-    chmod 644 /etc/cron.d/delexp
-    chmod 644 /etc/cron.d/expired_notifier
-    chmod 644 /etc/cron.d/limit_ip_ssh
-    chmod 644 /etc/cron.d/limit_quota
-    chmod 644 /etc/cron.d/log.nginx
-    chmod 644 /etc/cron.d/log.xray
-    chmod 644 /etc/cron.d/logclean
-    chmod 644 /etc/cron.d/rekam_usage
-    chmod 644 /etc/cron.d/ssh_accountant
-    chmod 644 /etc/cron.d/xp_trojan_auto
-    chmod 644 /etc/cron.d/xp_vmess_auto
+    # 3. SET PERMISSIONS
+    chmod 644 /etc/cron.d/*
 
     # 4. Restart Daemon Cron
     systemctl restart cron 2>/dev/null || service cron restart 2>/dev/null
@@ -587,5 +510,5 @@ print_gradient "╭════════════════════�
 print_gradient "│          UPDATE COMPLETED !!             │"
 print_gradient "╰══════════════════════════════════════════╯"
 echo -e ""
-read -n 1 -s -r -p " Press [ Enter ] to back to menu"
+read -n 1 -s -r -p " Press [ Enter ] to back to menu "
 menu
