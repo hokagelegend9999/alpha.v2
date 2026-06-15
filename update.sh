@@ -102,7 +102,7 @@ hokage_anim() {
 }
 
 # ==================================================
-# LOGIKA UPDATE (Script Asli Anda + Cron XP Baru)
+# LOGIKA UPDATE
 # ==================================================
 run_update() {
     # 1. Download & Install FV Tunnel
@@ -126,7 +126,7 @@ run_update() {
     wget -q -O /usr/local/sbin/menu https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/menu
     chmod +x /usr/local/sbin/menu
     
-    # 5. Buat Folder Usage (ZIVPN Dihapus)
+    # 5. Buat Folder Usage
     mkdir -p /etc/ssh/usage_db
     chmod 777 /etc/ssh/usage_db
     
@@ -486,63 +486,61 @@ EOF
     # SETTING CRON JOB (XP UPDATE TERBARU)
     # ------------------------------------------
 
-    cat >/etc/cron.d/ssh_accountant <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    * * * * * root /usr/local/sbin/ssh-accountant
-END
-
+    # 1. Hapus crontab lama agar tidak bentrok
+    rm -f /etc/cron.d/ssh_accountant
     rm -f /etc/cron.d/limit_quota
+    rm -f /etc/cron.d/xp_all
+    rm -f /etc/cron.d/expired_notifier
+    rm -f /etc/cron.d/limit_ip_ssh
+    rm -f /etc/cron.d/delexp
+    rm -f /etc/cron.d/rekam_usage
+    rm -f /etc/cron.d/xp_trojan_auto
+    rm -f /etc/cron.d/xp_vmess_auto
+    
+    # Hapus juga dari crontab utama (jika ada nyasar)
     sed -i "/limit-quota/d" /etc/crontab
-    cat >/etc/cron.d/limit_quota <<-EOF
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    */10 * * * * root /usr/local/sbin/limit-quota
-EOF
 
-    cat >/etc/cron.d/xp_all <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    10 0 * * * root /usr/local/sbin/xp
-END
+    # 2. Buat Crontab Baru dengan Format yang Benar (Tanpa spasi di awal)
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/ssh_accountant
+    echo "* * * * * root /usr/local/sbin/ssh-accountant" >> /etc/cron.d/ssh_accountant
 
-    cat >/etc/cron.d/expired_notifier <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    0 0 * * * root /usr/local/sbin/expired-notifier
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_quota
+    echo "*/10 * * * * root /usr/local/sbin/limit-quota" >> /etc/cron.d/limit_quota
 
-    cat >/etc/cron.d/limit_ip_ssh <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    */5 * * * * root /usr/local/sbin/limit-ip-ssh
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_all
+    echo "10 0 * * * root /usr/local/sbin/xp" >> /etc/cron.d/xp_all
 
-    cat >/etc/cron.d/delexp <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    10 0 * * * root /usr/local/sbin/delexp
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/expired_notifier
+    echo "0 0 * * * root /usr/local/sbin/expired-notifier" >> /etc/cron.d/expired_notifier
 
-    cat >/etc/cron.d/rekam_usage <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    * * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_ip_ssh
+    echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh
 
-    cat >/etc/cron.d/xp_trojan_auto <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    10 0 * * * root /usr/local/sbin/xp-trojan
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/delexp
+    echo "10 0 * * * root /usr/local/sbin/delexp" >> /etc/cron.d/delexp
 
-    cat >/etc/cron.d/xp_vmess_auto <<-END
-    SHELL=/bin/sh
-    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-    10 0 * * * root /usr/local/sbin/xp-vmess
-END
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/rekam_usage
+    echo "* * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1" >> /etc/cron.d/rekam_usage
 
-    service cron restart
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_trojan_auto
+    echo "10 0 * * * root /usr/local/sbin/xp-trojan" >> /etc/cron.d/xp_trojan_auto
+
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vmess_auto
+    echo "10 0 * * * root /usr/local/sbin/xp-vmess" >> /etc/cron.d/xp_vmess_auto
+
+    # 3. SET PERMISSIONS (SANGAT PENTING)
+    chmod 644 /etc/cron.d/ssh_accountant
+    chmod 644 /etc/cron.d/limit_quota
+    chmod 644 /etc/cron.d/xp_all
+    chmod 644 /etc/cron.d/expired_notifier
+    chmod 644 /etc/cron.d/limit_ip_ssh
+    chmod 644 /etc/cron.d/delexp
+    chmod 644 /etc/cron.d/rekam_usage
+    chmod 644 /etc/cron.d/xp_trojan_auto
+    chmod 644 /etc/cron.d/xp_vmess_auto
+
+    # 4. Restart Daemon Cron
+    systemctl restart cron 2>/dev/null || service cron restart 2>/dev/null
 }
 
 # ==================================================
