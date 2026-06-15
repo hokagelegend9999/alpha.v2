@@ -505,7 +505,7 @@ EOF
     
     sed -i "/limit-quota/d" /etc/crontab 2>/dev/null
 
-    # 2. Buat Crontab Baru Sesuai Referensi (Tanpa Spasi Awal)
+    # 2. Buat Crontab Baru (Tanpa Duplikasi)
     
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/clean-trial
     echo "*/3 * * * * root /usr/local/sbin/clean-trial" >> /etc/cron.d/clean-trial
@@ -513,16 +513,14 @@ EOF
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/daily_reboot
     echo "0 5 * * * root /sbin/reboot" >> /etc/cron.d/daily_reboot
 
+    # HANYA GUNAKAN DELEXP (xp_all dihapus agar tidak double notifikasi)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/delexp
     echo "10 0 * * * root /usr/local/sbin/delexp" >> /etc/cron.d/delexp
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/expired_notifier
     echo "0 0 * * * root /usr/local/sbin/expired-notifier" >> /etc/cron.d/expired_notifier
 
-    # Duplicate limit IP agar sesuai referensi
-    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/lim-ip-ssh
-    echo "*/5 * * * * root /usr/local/sbin/lim-ip-ssh" >> /etc/cron.d/lim-ip-ssh
-
+    # HANYA GUNAKAN SATU LIMIT IP SSH (Duplikat dihapus agar CPU aman)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_ip_ssh
     echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh
 
@@ -532,7 +530,6 @@ EOF
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/log.nginx
     echo "0 0 * * * root echo -n > /var/log/nginx/access.log" >> /etc/cron.d/log.nginx
 
-    # Log Xray disetel harian agar fitur Online/Offline tetap akurat
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/log.xray
     echo "0 0 * * * root echo -n > /var/log/xray/access.log" >> /etc/cron.d/log.xray
 
@@ -545,21 +542,17 @@ EOF
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/ssh_accountant
     echo "* * * * * root /usr/local/sbin/ssh-accountant" >> /etc/cron.d/ssh_accountant
 
-    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_all
-    echo "10 0 * * * root /usr/local/sbin/xp" >> /etc/cron.d/xp_all
-
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_trojan_auto
     echo "10 0 * * * root /usr/local/sbin/xp-trojan" >> /etc/cron.d/xp_trojan_auto
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vmess_auto
     echo "10 0 * * * root /usr/local/sbin/xp-vmess" >> /etc/cron.d/xp_vmess_auto
 
-    # 3. SET PERMISSIONS (HARUS 644 AGAR CRON BERJALAN)
+    # 3. SET PERMISSIONS (Disesuaikan dengan file yang tersisa)
     chmod 644 /etc/cron.d/clean-trial
     chmod 644 /etc/cron.d/daily_reboot
     chmod 644 /etc/cron.d/delexp
     chmod 644 /etc/cron.d/expired_notifier
-    chmod 644 /etc/cron.d/lim-ip-ssh
     chmod 644 /etc/cron.d/limit_ip_ssh
     chmod 644 /etc/cron.d/limit_quota
     chmod 644 /etc/cron.d/log.nginx
@@ -567,7 +560,6 @@ EOF
     chmod 644 /etc/cron.d/logclean
     chmod 644 /etc/cron.d/rekam_usage
     chmod 644 /etc/cron.d/ssh_accountant
-    chmod 644 /etc/cron.d/xp_all
     chmod 644 /etc/cron.d/xp_trojan_auto
     chmod 644 /etc/cron.d/xp_vmess_auto
 
