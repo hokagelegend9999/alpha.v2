@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==================================================
-#           PERSIAPAN & DEPENDENSI
+#            PERSIAPAN & DEPENDENSI
 # ==================================================
 
 # Pastikan tool dasar terinstall
@@ -13,7 +13,7 @@ fi
 clear
 
 # ==================================================
-#           FUNGSI ANIMASI LOADING
+#            FUNGSI ANIMASI LOADING
 # ==================================================
 fun_bar() {
     CMD="$1"
@@ -55,7 +55,7 @@ fun_bar() {
 }
 
 # ==================================================
-#           FUNGSI UPDATE UTAMA
+#            FUNGSI UPDATE UTAMA
 # ==================================================
 res1() {
     # Hentikan service dulu agar file tidak terkunci
@@ -65,18 +65,15 @@ res1() {
     rm -rf /usr/bin/kyt/modules
     mkdir -p /usr/bin/kyt/modules
     
-    # Download Modules (Menggunakan URL RAW yang benar)
+    # Download Modules
     wget -q -O modules.zip "https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/main/bot/modules.zip"
     unzip -o modules.zip > /dev/null 2>&1
     
-    # Cek apakah hasil unzip membuat folder 'modules' atau flat file
     if [ -d "modules" ]; then
         chmod +x modules/*
         mv modules/* /usr/bin/kyt/modules/
         rm -rf modules
     else
-        # Jika zip tidak ada foldernya (flat), pindahkan file hasil unzip langsung
-        # (Opsional: sesuaikan jika struktur zip berbeda)
         echo "Zip structure check..." 
     fi
     rm -f modules.zip
@@ -91,18 +88,40 @@ res1() {
     
     if [ -d "shell" ]; then
         chmod +x shell/*
-        # PERBAIKAN DI SINI: Memindahkan 'shell', bukan 'modules' lagi
         mv shell/* /usr/bin/kyt/shell/
         rm -rf shell
     fi
     rm -f shell.zip
     chmod +x -R /usr/bin/kyt/shell/
     chmod +x -R /usr/bin/kyt/modules/
+    
+    # Fix carriage returns untuk detail bot
     sed -i 's/\r$//' /usr/bin/kyt/shell/bot/bot-shadowsocks-detail
     sed -i 's/\r$//' /usr/bin/kyt/shell/bot/bot-vless-detail
     sed -i 's/\r$//' /usr/bin/kyt/shell/bot/bot-vmess-detail
     sed -i 's/\r$//' /usr/bin/kyt/shell/bot/bot-trojan-detail
-    # --- 3. RESTART SERVICE ---
+
+    # --- 3. UPDATE BOT COMMANDS KE /usr/bin (BARU) ---
+    # Buat direktori sementara agar ekstraksi aman
+    mkdir -p /tmp/bot_update_temp
+    wget -q -O /tmp/bot_update_temp/bot.zip "https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/bot/bot.zip"
+    
+    # Ekstrak di direktori sementara
+    unzip -o /tmp/bot_update_temp/bot.zip -d /tmp/bot_update_temp/ > /dev/null 2>&1
+    rm -f /tmp/bot_update_temp/bot.zip
+    
+    # Cek jika di dalam zip terdapat folder bernama 'bot' atau isinya langsung file (flat)
+    if [ -d "/tmp/bot_update_temp/bot" ]; then
+        chmod +x /tmp/bot_update_temp/bot/*
+        cp -rf /tmp/bot_update_temp/bot/* /usr/bin/
+    else
+        chmod +x /tmp/bot_update_temp/*
+        cp -rf /tmp/bot_update_temp/* /usr/bin/
+    fi
+    # Bersihkan folder sementara
+    rm -rf /tmp/bot_update_temp
+
+    # --- 4. RESTART SERVICE ---
     systemctl enable kyt
     systemctl restart kyt
     chmod +x -R /usr/bin/kyt/shell/
@@ -110,7 +129,7 @@ res1() {
 }
 
 # ==================================================
-#           EKSEKUSI MENU
+#            EKSEKUSI MENU
 # ==================================================
 
 # Hapus file update-bot lama agar bersih
@@ -120,7 +139,7 @@ echo -e "━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e " \e[1;97;101m UPDATE BOT TELEGRAM  !              \e[0m"
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" | lolcat
 echo -e ""
-echo -e "  \033[1;91m Update Script Service & Menu\033[1;37m"
+echo -e "  \033[1;91m Update Script Service, Menu & Bot\033[1;37m"
 
 # Jalankan fungsi update dengan loading bar
 fun_bar 'res1'
