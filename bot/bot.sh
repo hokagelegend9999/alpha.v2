@@ -9,7 +9,16 @@ NC='\e[0m'
 #install packages
 echo -e "${grenbo}Installing Dependencies...${NC}"
 apt update && apt upgrade -y
-apt install python3 python3-pip git -y
+
+# --- TAMBAHAN UNTUK ATD (TRIAL VLESS) ---
+# Menambahkan 'at' pada list instalasi
+apt install python3 python3-pip git at -y
+
+# Memastikan layanan 'atd' berjalan dan otomatis menyala saat server reboot
+echo -e "${grenbo}Enabling atd service for auto-kill...${NC}"
+systemctl enable atd
+systemctl restart atd
+# ----------------------------------------
 
 # Bersihkan speedtest lama jika ada (biar tidak bentrok)
 apt-get remove speedtest-cli -y > /dev/null 2>&1
@@ -36,7 +45,7 @@ chmod +x /usr/bin/kyt/shell/bot/*
 clear
 echo ""
 echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-echo -e " \e[1;97;101m          ADD BOT PANEL           \e[0m"
+echo -e " \e[1;97;101m           ADD BOT PANEL           \e[0m"
 echo -e "\033[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 echo -e "${grenbo}Tutorial Creat Bot and ID Telegram${NC}"
 echo -e "${grenbo}[*] Creat Bot and Token Bot : @BotFather${NC}"
