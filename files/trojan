@@ -1,20 +1,28 @@
 #!/bin/bash
-function send-log(){
-CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
-KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
-TIME="10"
-URL="https://api.telegram.org/bot$KEY/sendMessage"
-TEXT="
-<code>────────────────────</code>
-<b>⚠️NOTIF QUOTA HABIS⚠️</b>
-<code>────────────────────</code>
-<code>Username  : </code><code>$user</code>
-<code>Usage     : </code><code>$total</code>
-<code>────────────────────</code>
-"
-curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-}
+# ==========================================================
+# CORE SCRIPT: TROJAN QUOTA & IP LIMITER (DAEMON SYSTEMD)
+# Lokasi: /usr/local/sbin/limit-trojan
+# ==========================================================
 
+# 1. Sumber file konfigurasi Bot Telegram
+if [ -f "/usr/bin/kyt/var.txt" ]; then
+    source /usr/bin/kyt/var.txt
+else
+    echo "Error: File /usr/bin/kyt/var.txt tidak ditemukan!"
+    exit 1
+fi
+
+# 2. Konfigurasi Toleransi IP / Socket
+SOCKET_PER_DEVICE=4  
+TOLERANSI_SOCKET=2   
+COOLDOWN_NOTIF=600   
+COOLDOWN_DIR="/tmp/limit_cooldown_trojan"
+
+mkdir -p "$COOLDOWN_DIR"
+mkdir -p /etc/kyt/log/trojan
+mkdir -p /etc/limit/trojan
+
+# 3. Fungsi Konversi Byte ke Format Terbaca
 function con() {
     local -i bytes=$1;
     if [[ $bytes -lt 1024 ]]; then
@@ -28,68 +36,127 @@ function con() {
     fi
 }
 
+# 4. Fungsi Notifikasi Kuota Habis
+function send_log_quota(){
+    TIME="10"
+    URL="https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
+    TEXT="<code>────────────────────</code>
+<b>⚠️ NOTIF QUOTA HABIS TROJAN ⚠️</b>
+<code>────────────────────</code>
+👤 <b>Username : </b><code>$user</code>
+💾 <b>Limit Quota: </b><code>$total2</code>
+📈 <b>Usage Real : </b><code>$total</code>
+🚫 <b>Status   : </b><b>DIHAPUS DARI SISTEM</b>
+<code>────────────────────</code>"
+    
+    REPLY_MARKUP='{"inline_keyboard":[[{"text":"🔄 /start (Kembali ke Menu)","callback_data":"menu"}]]}'
 
-  while true; do
-  sleep 30
-  data=($(cat /etc/xray/config.json | grep '^#!' | cut -d ' ' -f 2 | sort | uniq))
-  if [[ ! -e /etc/limit/trojan ]]; then
-  mkdir -p /etc/limit/trojan
-  fi
-  for user in ${data[@]}
-  do
-  xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" >& /tmp/${user}
-  getThis=$(cat /tmp/${user} | awk '{print $1}');
-  if [[ ${getThis} != "failed" ]]; then
-        downlink=$(xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" | grep -w "value" | awk '{print $2}' | cut -d '"' -f2);
-        if [ -e /etc/limit/trojan/${user} ]; then
-        plus2=$(cat /etc/limit/trojan/${user});
-        if [[ ${#plus2} -gt 0 ]]; then
-        plus3=$(( ${downlink} + ${plus2} ));
-        echo "${plus3}" > /etc/limit/trojan/"${user}"
-        xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" -reset > /dev/null 2>&1
-        else
-        echo "${downlink}" > /etc/limit/trojan/"${user}"
-        xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" -reset > /dev/null 2>&1
+    curl -s --max-time $TIME -G --data-urlencode "chat_id=$ADMIN" --data-urlencode "disable_web_page_preview=1" --data-urlencode "text=$TEXT" --data-urlencode "parse_mode=HTML" --data-urlencode "reply_markup=$REPLY_MARKUP" "$URL" >/dev/null
+}
+
+# 5. Fungsi Notifikasi Pelanggaran IP
+function send_log_ip(){
+    TIME="10"
+    URL="https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
+    TEXT="<code>────────────────────</code>
+<b>🚨 PELANGGARAN MULTI LOGIN TROJAN 🚨</b>
+<code>────────────────────</code>
+👤 <b>Username</b> : <code>$user</code>
+🌐 <b>Batas Limit IP</b> : <code>$iplimit Device</code>
+⚙️ <b>Max Socket (x$SOCKET_PER_DEVICE)</b> : <code>$batas_maksimal Jalur (Inc. Toleransi)</code>
+🔍 <b>Terdeteksi</b>: <code>$cekcek Jalur Koneksi Aktif</code>
+🚫 <b>Tindakan</b>: <b>Peringatan & Logged</b>
+<code>────────────────────</code>
+<i>🔇 Notif disenyapkan selama $((COOLDOWN_NOTIF / 60)) menit.</i>"
+    
+    REPLY_MARKUP='{"inline_keyboard":[[{"text":"🔄 /start (Kembali ke Menu)","callback_data":"menu"}]]}'
+
+    curl -s --max-time $TIME -G --data-urlencode "chat_id=$ADMIN" --data-urlencode "disable_web_page_preview=1" --data-urlencode "text=$TEXT" --data-urlencode "parse_mode=HTML" --data-urlencode "reply_markup=$REPLY_MARKUP" "$URL" >/dev/null
+}
+
+# ==========================================================
+# LOOP UTAMA (BERJALAN DI LATAR BELAKANG)
+# ==========================================================
+while true; do
+    sleep 10
+    
+    # Ambil daftar semua user Trojan aktif dari config (Menggunakan penanda khusus #! )
+    data=($(grep '^#! ' /etc/xray/config.json | cut -d ' ' -f 2 | sort | uniq))
+
+    for user in "${data[@]}"; do
+        
+        # --------------------------------------------------
+        # BAGIAN A: PENGECEKAN & AKUMULASI QUOTA
+        # --------------------------------------------------
+        dl_api=$(xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" -reset 2>/dev/null | grep "value" | awk '{print $2}' | tr -d '"')
+        ul_api=$(xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>uplink" -reset 2>/dev/null | grep "value" | awk '{print $2}' | tr -d '"')
+
+        [[ -z "$dl_api" ]] && dl_api=0
+        [[ -z "$ul_api" ]] && ul_api=0
+        current_usage=$((dl_api + ul_api))
+
+        if [[ $current_usage -gt 0 ]]; then
+            plus2=0
+            [[ -f "/etc/limit/trojan/${user}" ]] && plus2=$(cat "/etc/limit/trojan/${user}")
+            total_usage=$((current_usage + plus2))
+            echo "${total_usage}" > "/etc/limit/trojan/${user}"
         fi
-        else
-        echo "${downlink}" > /etc/limit/trojan/"${user}"
-        xray api stats --server=127.0.0.1:10000 -name "user>>>${user}>>>traffic>>>downlink" -reset > /dev/null 2>&1
+
+        if [[ -f "/etc/trojan/${user}" ]]; then
+            checkLimit=$(cat "/etc/trojan/${user}")
+            if [[ "$checkLimit" -gt 0 ]]; then
+                Usage=0
+                [[ -f "/etc/limit/trojan/${user}" ]] && Usage=$(cat "/etc/limit/trojan/${user}")
+
+                if [[ "$Usage" -gt "$checkLimit" ]]; then
+                    total=$(con ${Usage})
+                    total2=$(con ${checkLimit})
+
+                    # Hapus Data User (Format Penanda #! )
+                    exp=$(grep -w "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+                    sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
+                    sed -i "/\b${user}\b/d" /etc/trojan/.trojan.db 2>/dev/null
+
+                    send_log_quota
+
+                    # Bersihkan Sampah File
+                    rm -rf /etc/limit/trojan/${user}
+                    rm -f /etc/kyt/limit/trojan/ip/$user
+                    rm -f /etc/trojan/$user
+                    rm -f /var/www/html/trojan-$user.txt
+
+                    systemctl restart xray > /dev/null 2>&1
+                    continue 
+                fi
+            fi
         fi
-        else
-      echo ""
-   fi
-done
-# Check ur Account
-for user in ${data[@]}
-  do
-    if [ -e /etc/trojan/${user} ]; then
-      checkLimit=$(cat /etc/trojan/${user});
-      if [[ ${#checkLimit} -gt 1 ]]; then
-      if [ -e /etc/limit/trojan/${user} ]; then
-      Usage=$(cat /etc/limit/trojan/${user});
-      if [[ ${Usage} -gt ${checkLimit} ]]; then
-      exp=$(grep -w "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-      sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
-      sed -i "/^#! $user $exp/d" /etc/trojan/.trojan.db
-       total=$(con ${Usage})
-       send-log
-       rm -f /etc/funny/limit/trojan/ip/$user
-       rm -f /etc/limit/trojan/$user
-       rm -f /etc/limit/trojan/quota/$user
-       rm -f /etc/trojan/$user
-	   rm -f /var/www/html/trojan-$user.txt
-      systemctl restart xray >> /dev/null 2>&1
-      else
-      echo ""
-      fi
-      else
-      echo ""
-      fi
-      else
-      echo ""
-      fi
-      else
-      echo ""
-    fi
-  done
+
+        # --------------------------------------------------
+        # BAGIAN B: PENGECEKAN LIMIT IP (MULTI LOGIN)
+        # --------------------------------------------------
+        iplimit=0
+        [[ -f "/etc/kyt/limit/trojan/ip/$user" ]] && iplimit=$(cat "/etc/kyt/limit/trojan/ip/$user")
+
+        if [[ "$iplimit" -gt 0 ]]; then
+            cekcek=$(grep -w "email: $user" /var/log/xray/access.log 2>/dev/null | tail -n 500 | awk '{print $3}' | sort -u | wc -l)
+            batas_maksimal=$(( (iplimit * SOCKET_PER_DEVICE) + TOLERANSI_SOCKET ))
+
+            if [[ "$cekcek" -gt "$batas_maksimal" ]]; then
+                tanggal=$(date +"%Y-%m-%d %H:%M:%S")
+                echo -e "$tanggal | OVERLIMIT TROJAN: $user | Socket: $cekcek | Max: $batas_maksimal" >> /etc/kyt/log/trojan/trojan.log
+
+                waktu_sekarang=$(date +%s)
+                waktu_terakhir=0
+                [[ -f "$COOLDOWN_DIR/$user" ]] && waktu_terakhir=$(cat "$COOLDOWN_DIR/$user")
+                
+                selisih_waktu=$((waktu_sekarang - waktu_terakhir))
+
+                if [[ "$selisih_waktu" -ge "$COOLDOWN_NOTIF" ]]; then
+                    send_log_ip
+                    echo "$waktu_sekarang" > "$COOLDOWN_DIR/$user"
+                fi
+            fi
+        fi
+
+    done
 done
