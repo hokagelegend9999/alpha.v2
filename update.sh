@@ -161,6 +161,7 @@ run_update() {
     rm -f /etc/cron.d/ssh_accountant
     rm -f /etc/cron.d/xp_trojan_auto
     rm -f /etc/cron.d/xp_vmess_auto
+    rm -f /etc/cron.d/xp_vless_auto
     
     sed -i "/limit-quota/d" /etc/crontab 2>/dev/null
 
