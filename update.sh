@@ -142,6 +142,7 @@ run_update() {
     dos2unix /usr/local/sbin/expired-notifier > /dev/null 2>&1
     dos2unix /usr/local/sbin/xp-trojan > /dev/null 2>&1
     dos2unix /usr/local/sbin/xp-vmess > /dev/null 2>&1
+    dos2unix /usr/local/sbin/xp-vless > /dev/null 2>&1
 
     # ------------------------------------------
     # SETTING CRON JOB (XP UPDATE TERBARU)
