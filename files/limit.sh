@@ -14,10 +14,10 @@ rm -f /etc/xray/limit.*
 rm -f /etc/systemd/system/limit*.service
 
 echo -e "[2/4] Mendownload File Eksekusi ke /usr/local/sbin/..."
-wget -q -O /usr/local/sbin/limit-vmess "${REPO}limit/vmess"
-wget -q -O /usr/local/sbin/limit-vless "${REPO}limit/vless"
-wget -q -O /usr/local/sbin/limit-trojan "${REPO}limit/trojan"
-wget -q -O /usr/local/sbin/limit-shadowsocks "${REPO}limit/shadowsocks"
+wget -q -O /usr/local/sbin/limit-vmess "${REPO}files/vmess"
+wget -q -O /usr/local/sbin/limit-vless "${REPO}files/vless"
+wget -q -O /usr/local/sbin/limit-trojan "${REPO}files/trojan"
+wget -q -O /usr/local/sbin/limit-shadowsocks "${REPO}files/shadowsocks"
 
 # Memberikan hak akses eksekusi ke semua script limit
 chmod +x /usr/local/sbin/limit-*
