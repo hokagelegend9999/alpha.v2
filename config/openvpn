@@ -1,11 +1,21 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
-OS=`uname -m`;
-MYIP=$(wget -qO- ipinfo.io/ip);
-domain=$(cat /root/domain)
-MYIP2="s/xxxxxxxxx/$domain/g";
+OS=`uname -m`
+MYIP=$(wget -qO- ipinfo.io/ip)
+
+# Cek apakah ada domain, jika tidak gunakan IP
+if [ -f /root/domain ] && [ -s /root/domain ]; then
+    domain=$(cat /root/domain)
+else
+    domain=$MYIP
+fi
+MYIP2="s/xxxxxxxxx/$domain/g"
 
 function ovpn_install() {
+    # Install paket yang dibutuhkan (termasuk python3-requests untuk monitor telegram)
+    apt-get update -y
+    apt-get install -y python3 python3-requests zip unzip wget curl
+
     rm -rf /etc/openvpn
     mkdir -p /etc/openvpn
     wget -O /etc/openvpn/vpn.zip "https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/config/vpn.zip" >/dev/null 2>&1
@@ -19,6 +29,19 @@ function config_easy() {
     mkdir -p /usr/lib/openvpn/
     cp /usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/lib/openvpn/openvpn-plugin-auth-pam.so
     sed -i 's/#AUTOSTART="all"/AUTOSTART="all"/g' /etc/default/openvpn
+    
+    # Memasukkan rule monitoring ke file server config OpenVPN
+    for conf in /etc/openvpn/server-*.conf /etc/openvpn/server/server-*.conf; do
+        if [ -f "$conf" ]; then
+            if ! grep -q "ovpn-monitor.py" "$conf"; then
+                echo "" >> "$conf"
+                echo "script-security 2" >> "$conf"
+                echo "client-connect /etc/openvpn/ovpn-monitor.py" >> "$conf"
+                echo "client-disconnect /etc/openvpn/ovpn-monitor.py" >> "$conf"
+            fi
+        fi
+    done
+
     systemctl enable --now openvpn-server@server-tcp
     systemctl enable --now openvpn-server@server-udp
     /etc/init.d/openvpn restart
@@ -27,6 +50,7 @@ function config_easy() {
 function make_follow() {
     echo 1 > /proc/sys/net/ipv4/ip_forward
     sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+
 cat > /etc/openvpn/tcp.ovpn <<-END
 client
 dev tun
@@ -102,6 +126,7 @@ tls-client
 verify-x509-name server name
 END
     sed -i $MYIP2 /etc/openvpn/ssl.ovpn;
+
 cat > /etc/openvpn/ovpn-monitor.py <<-END
 #!/usr/bin/env python3
 import os
@@ -118,20 +143,16 @@ def get_config(file_path):
         with open(file_path, 'r') as f:
             for line in f:
                 line = line.strip()
-                # Abaikan baris kosong atau komentar (simbol #)
                 if line and not line.startswith('#'):
                     if '=' in line:
                         key, val = line.split('=', 1)
-                        # Bersihkan tanda kutip (" atau ') agar token terbaca bersih
                         config[key.strip()] = val.strip().strip('\'"')
     except Exception as e:
         sys.stderr.write(f"Gagal membaca {file_path}: {e}\n")
     return config
 
-# Load konfigurasi dari direktori kyt
 var_config = get_config("/usr/bin/kyt/var.txt")
 
-# Menangkap BOT_TOKEN dan ADMIN (sebagai CHAT_ID) dari var.txt
 BOT_TOKEN = var_config.get("BOT_TOKEN", "")
 CHAT_ID = var_config.get("ADMIN", "")
 # ==========================================
@@ -153,7 +174,6 @@ def kirim_telegram(pesan):
         sys.stderr.write(f"Gagal mengirim notifikasi: {e}\n")
 
 def main():
-    # Menangkap data dari OpenVPN env
     event_type = os.environ.get("script_type")
     username = os.environ.get("common_name", "Unknown")
     client_ip = os.environ.get("trusted_ip", "Unknown")
@@ -176,7 +196,6 @@ def main():
         kirim_telegram(pesan)
 
     elif event_type == "client-disconnect":
-        # Konversi byte ke MB
         mb_download = round(int(bytes_sent) / (1024 * 1024), 2)
         mb_upload = round(int(bytes_received) / (1024 * 1024), 2)
         
@@ -216,22 +235,21 @@ function cert_ovpn() {
     cp /etc/openvpn/ws-ssl.ovpn /var/www/html/ws-ssl.ovpn
 
     echo '<ca>' >> /etc/openvpn/ssl.ovpn
-    cp /etc/openvpn/ws-ssl.ovpn /var/www/html/ssl.ovpn
+    cat /etc/openvpn/server/ca.crt >> /etc/openvpn/ssl.ovpn
+    echo '</ca>' >> /etc/openvpn/ssl.ovpn
+    cp /etc/openvpn/ssl.ovpn /var/www/html/ssl.ovpn
 
     # --- 2. ZIP CONFIG ---
     cd /var/www/html/
     zip Kyt-Project.zip tcp.ovpn udp.ovpn ssl.ovpn ws-ssl.ovpn > /dev/null 2>&1
 
-    # --- 3. DOWNLOAD LOGO (FIXED) ---
-    # Menggunakan "raw.githubusercontent.com" agar yang terdownload adalah gambar, bukan file HTML
+    # --- 3. DOWNLOAD LOGO ---
     wget -q -O /var/www/html/logo.png "https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/main/ssh/logo.png"
-
-    # Fallback jika gagal download (Opsional)
     if [ ! -f /var/www/html/logo.png ]; then
         wget -q -O /var/www/html/logo.png "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1200px-Python-logo-notext.svg.png"
     fi
 
-    # --- 4. CREATE VIEWER PAGE (Agar config bisa dilihat/dicopy) ---
+    # --- 4. CREATE VIEWER PAGE ---
 cat <<'EOF' > /var/www/html/view.html
 <!DOCTYPE html>
 <html lang="en">
@@ -261,7 +279,7 @@ cat <<'EOF' > /var/www/html/view.html
             <textarea id="configText" readonly>Memuat konfigurasi...</textarea>
             <div class="mt-4">
                 <button onclick="copyText()" class="btn btn-custom btn-copy"><i class="fas fa-copy"></i> Copy</button>
-                <a id="downLink" href="#" class="btn btn-custom btn-down"><i class="fas fa-download"></i> Download .OVPN</a>
+                <a id="downLink" href="#" download class="btn btn-custom btn-down"><i class="fas fa-download"></i> Download .OVPN</a>
             </div>
             <div class="mt-3">
                 <a href="index.html" class="btn btn-sm btn-back"><i class="fas fa-arrow-left"></i> Kembali</a>
@@ -274,9 +292,14 @@ cat <<'EOF' > /var/www/html/view.html
         const fileMap = { 'tcp': 'tcp.ovpn', 'udp': 'udp.ovpn', 'ssl': 'ssl.ovpn', 'ws-ssl': 'ws-ssl.ovpn' };
         if(id && fileMap[id]) {
             document.getElementById('titleConfig').innerText = id.toUpperCase() + ' CONFIG';
-            document.getElementById('downLink').href = fileMap[id];
+            
+            const downLink = document.getElementById('downLink');
+            downLink.href = fileMap[id];
+            downLink.setAttribute('download', fileMap[id]); 
+            
             fetch(fileMap[id]).then(r => r.text()).then(t => document.getElementById('configText').value = t).catch(e => document.getElementById('configText').value = "Gagal memuat file.");
         } else { document.getElementById('titleConfig').innerText = "FILE NOT FOUND"; }
+        
         function copyText() {
             var copyText = document.getElementById("configText");
             copyText.select();
@@ -288,7 +311,7 @@ cat <<'EOF' > /var/www/html/view.html
 </html>
 EOF
 
-    # --- 5. CREATE INDEX PAGE (Glassmorphism & Logo Fix) ---
+    # --- 5. CREATE INDEX PAGE ---
 cat <<'EOF' > /var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
@@ -355,22 +378,21 @@ EOF
     chmod 755 /var/www/html/index.html
     chmod 755 /var/www/html/view.html
     chmod 644 /var/www/html/logo.png
-    # Berikan izin baca dan eksekusi untuk semua user
-    chmod 755 /etc/openvpn/ovpn-monitor.py
-
-# Pastikan file tersebut tidak dimiliki oleh root saja, agar bisa dibaca sistem
-chown root:root /etc/openvpn/ovpn-monitor.py
+    
+    # Berikan izin eksekusi penuh pada script monitor
+    chmod +x /etc/openvpn/ovpn-monitor.py
+    chown root:root /etc/openvpn/ovpn-monitor.py
 }
 
 function install_ovpn() {
     ovpn_install
+    make_follow
     config_easy
-    make_follow
-    make_follow
     cert_ovpn
     systemctl enable openvpn
-    systemctl start openvpn
-    /etc/init.d/openvpn restart
+    systemctl restart openvpn
+    systemctl restart openvpn-server@server-tcp
+    systemctl restart openvpn-server@server-udp
 }
 
 # JALANKAN INSTALLER
