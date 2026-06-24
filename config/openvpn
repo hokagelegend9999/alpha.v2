@@ -90,6 +90,100 @@ comp-lzo
 verb 3
 END
     sed -i $MYIP2 /etc/openvpn/ssl.ovpn;
+cat > /etc/openvpn/ovpn-monitor.py <<-END
+#!/usr/bin/env python3
+import os
+import sys
+import requests
+from datetime import datetime
+
+# ==========================================
+# FUNGSI MEMBACA var.txt
+# ==========================================
+def get_config(file_path):
+    config = {}
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Abaikan baris kosong atau komentar (simbol #)
+                if line and not line.startswith('#'):
+                    if '=' in line:
+                        key, val = line.split('=', 1)
+                        # Bersihkan tanda kutip (" atau ') agar token terbaca bersih
+                        config[key.strip()] = val.strip().strip('\'"')
+    except Exception as e:
+        sys.stderr.write(f"Gagal membaca {file_path}: {e}\n")
+    return config
+
+# Load konfigurasi dari direktori kyt
+var_config = get_config("/usr/bin/kyt/var.txt")
+
+# Menangkap BOT_TOKEN dan ADMIN (sebagai CHAT_ID) dari var.txt
+BOT_TOKEN = var_config.get("BOT_TOKEN", "")
+CHAT_ID = var_config.get("ADMIN", "")
+# ==========================================
+
+def kirim_telegram(pesan):
+    if not BOT_TOKEN or not CHAT_ID:
+        sys.stderr.write("Token atau Chat ID gagal dimuat dari var.txt\n")
+        return
+        
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": pesan,
+        "parse_mode": "HTML"
+    }
+    try:
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        sys.stderr.write(f"Gagal mengirim notifikasi: {e}\n")
+
+def main():
+    # Menangkap data dari OpenVPN env
+    event_type = os.environ.get("script_type")
+    username = os.environ.get("common_name", "Unknown")
+    client_ip = os.environ.get("trusted_ip", "Unknown")
+    bytes_received = os.environ.get("bytes_received", "0")
+    bytes_sent = os.environ.get("bytes_sent", "0")
+    
+    waktu = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+
+    if event_type == "client-connect":
+        pesan = (
+            f"⚠️ <b>𝗢𝗣𝗘𝗡𝗩𝗣𝗡 𝗟𝗢𝗚𝗜𝗡</b> ⚠️\n"
+            f"───────────────────\n"
+            f"👤 <b>User:</b> <code>{username}</code>\n"
+            f"🌐 <b>IP Klien:</b> <code>{client_ip}</code>\n"
+            f"📊 <b>Status:</b> Terhubung\n"
+            f"🕒 <b>Waktu:</b> {waktu}\n"
+            f"───────────────────\n"
+            f"⚙️ <i>HOKAGE LEGEND SYSTEM</i>"
+        )
+        kirim_telegram(pesan)
+
+    elif event_type == "client-disconnect":
+        # Konversi byte ke MB
+        mb_download = round(int(bytes_sent) / (1024 * 1024), 2)
+        mb_upload = round(int(bytes_received) / (1024 * 1024), 2)
+        
+        pesan = (
+            f"🛑 <b>𝗢𝗣𝗘𝗡𝗩𝗣𝗡 𝗟𝗢𝗚𝗢𝗨𝗧</b> 🛑\n"
+            f"───────────────────\n"
+            f"👤 <b>User:</b> <code>{username}</code>\n"
+            f"🌐 <b>IP Klien:</b> <code>{client_ip}</code>\n"
+            f"📥 <b>Download:</b> <code>{mb_download} MB</code>\n"
+            f"📤 <b>Upload:</b> <code>{mb_upload} MB</code>\n"
+            f"🕒 <b>Waktu:</b> {waktu}\n"
+            f"───────────────────\n"
+            f"⚙️ <i>HOKAGE LEGEND SYSTEM</i>"
+        )
+        kirim_telegram(pesan)
+
+if __name__ == "__main__":
+    main()
+END
 }
 
 function cert_ovpn() {
@@ -249,6 +343,11 @@ EOF
     chmod 755 /var/www/html/index.html
     chmod 755 /var/www/html/view.html
     chmod 644 /var/www/html/logo.png
+    # Berikan izin baca dan eksekusi untuk semua user
+    chmod 755 /etc/openvpn/ovpn-monitor.py
+
+# Pastikan file tersebut tidak dimiliki oleh root saja, agar bisa dibaca sistem
+chown root:root /etc/openvpn/ovpn-monitor.py
 }
 
 function install_ovpn() {
