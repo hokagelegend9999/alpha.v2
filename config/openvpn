@@ -40,6 +40,9 @@ persist-tun
 auth-user-pass
 comp-lzo
 verb 3
+remote-cert-tls server
+tls-client
+verify-x509-name server name
 END
     sed -i $MYIP2 /etc/openvpn/tcp.ovpn;
 
@@ -56,6 +59,9 @@ persist-tun
 auth-user-pass
 comp-lzo
 verb 3
+remote-cert-tls server
+tls-client
+verify-x509-name server name
 END
     sed -i $MYIP2 /etc/openvpn/udp.ovpn;
 
@@ -72,6 +78,9 @@ persist-tun
 auth-user-pass
 comp-lzo
 verb 3
+remote-cert-tls server
+tls-client
+verify-x509-name server name
 END
     sed -i $MYIP2 /etc/openvpn/ws-ssl.ovpn;
 
@@ -88,6 +97,9 @@ persist-tun
 auth-user-pass
 comp-lzo
 verb 3
+remote-cert-tls server
+tls-client
+verify-x509-name server name
 END
     sed -i $MYIP2 /etc/openvpn/ssl.ovpn;
 cat > /etc/openvpn/ovpn-monitor.py <<-END
