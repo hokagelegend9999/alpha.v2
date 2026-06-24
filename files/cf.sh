@@ -25,9 +25,9 @@ fi
 clear
 apt install jq curl -y
 ###DOM#AIN=installer.my.id
-DOMAIN=hokage.web.id
+DOMAIN=hokagelegend.net
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c6)
-SUB_DOMAIN=${sub}.hokage.web.id
+SUB_DOMAIN=${sub}.hokagelegend.net
 CF_ID=faridaumiabi@gmail.com
 CF_KEY=ab8d0901acb186291e58f21359d07e7b847dc
 set -euo pipefail
