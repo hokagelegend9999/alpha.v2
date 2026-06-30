@@ -140,6 +140,7 @@ run_update() {
     chmod +x /usr/local/sbin/grouping_map.sh
     sed -i 's/\r$//' /usr/local/sbin/monitor_traffic
     sed -i 's/\r$//' /usr/local/sbin/grouping_map.sh
+    dos2unix /usr/local/sbin/monitor_ssh_ip >/dev/null 2>&1
     dos2unix /usr/local/sbin/m-vless >/dev/null 2>&1
     dos2unix /usr/local/sbin/datauser-vless >/dev/null 2>&1
     dos2unix /usr/local/sbin/delexp >/dev/null 2>&1
