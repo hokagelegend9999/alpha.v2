@@ -113,7 +113,8 @@ run_update() {
     
     # 2. Bersihkan Folder sbin
     rm -rf /usr/local/sbin/*
-    
+    echo -e "${CYAN}Installing SQLite3...${NC}"
+    apt-get install sqlite3 -y > /dev/null 2>&1
     # 3. Download & Ekstrak Menu
     wget https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/menu/menu.zip
     unzip -o menu.zip > /dev/null 2>&1
@@ -135,6 +136,10 @@ run_update() {
     # 6. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
     chmod +x /usr/local/sbin/*
+    chmod +x /usr/local/sbin/monitor_traffic
+    chmod +x /usr/local/sbin/grouping_map.sh
+    sed -i 's/\r$//' /usr/local/sbin/monitor_traffic
+    sed -i 's/\r$//' /usr/local/sbin/grouping_map.sh
     dos2unix /usr/local/sbin/m-vless >/dev/null 2>&1
     dos2unix /usr/local/sbin/datauser-vless >/dev/null 2>&1
     dos2unix /usr/local/sbin/delexp >/dev/null 2>&1
