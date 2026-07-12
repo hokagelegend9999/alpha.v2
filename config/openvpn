@@ -12,18 +12,26 @@ fi
 MYIP2="s/xxxxxxxxx/$domain/g"
 
 function ovpn_install() {
-    # Install paket yang dibutuhkan (termasuk python3-requests untuk monitor telegram)
     apt-get update -y
     apt-get install -y python3 python3-requests zip unzip wget curl
 
     rm -rf /etc/openvpn
     mkdir -p /etc/openvpn
-    wget -O /etc/openvpn/vpn.zip "https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/ssh/vpn.zip" >/dev/null 2>&1
-    unzip -d /etc/openvpn/ /etc/openvpn/vpn.zip
+    
+    # Menghapus >/dev/null agar proses download terlihat
+    echo "Mengunduh file konfigurasi VPN..."
+    wget -O /etc/openvpn/vpn.zip "https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/ssh/vpn.zip"
+    
+    # Deteksi jika file zip gagal diunduh atau ukurannya 0 byte
+    if [ ! -s /etc/openvpn/vpn.zip ]; then
+        echo "GAGAL: vpn.zip tidak ditemukan atau tautan rusak!"
+        exit 1
+    fi
+
+    unzip -o -d /etc/openvpn/ /etc/openvpn/vpn.zip
     rm -f /etc/openvpn/vpn.zip
     chown -R root:root /etc/openvpn/server/easy-rsa/
 }
-
 function config_easy() {
     cd
     mkdir -p /usr/lib/openvpn/
