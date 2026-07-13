@@ -22,7 +22,10 @@ echo ""
 echo -e "${YELLOW}[1/4] Menyiapkan, memperbarui, dan menginstal paket (UFW & Fail2Ban)...${NC}"
 apt update -y
 apt install -y ufw fail2ban
-echo ""
+
+# Tambahkan jeda 3 detik di sini untuk menghindari xtables lock!
+sleep 3
+echo """
 
 # [2/4] Mengkonfigurasi & Membuka Port Firewall (UFW)
 echo -e "${YELLOW}[2/4] Mengkonfigurasi port UFW (SSH, HTTP/S, Gateway/UDP)...${NC}"
