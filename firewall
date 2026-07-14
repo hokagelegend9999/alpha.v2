@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Konfigurasi Warna untuk Tampilan
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}======================================================${NC}"
+echo -e "${GREEN}      AUTO INSTALLER UFW & FAIL2BAN HOKAGE STORE      ${NC}"
+echo -e "${YELLOW}======================================================${NC}"
+echo ""
+
+echo -e "${YELLOW}[1/5] Memperbarui repository dan menginstal paket...${NC}"
+apt-get update -y
+apt-get install ufw fail2ban -y
+
+echo -e "${YELLOW}[2/5] Mendaftarkan UFW ke sistem (Anti-Mati saat Reboot)...${NC}"
+systemctl enable ufw
+systemctl start ufw
+
+echo -e "${YELLOW}[3/5] Membuka port yang dibutuhkan...${NC}"
+ufw allow 22/tcp
+ufw allow 2222/tcp
+ufw allow 2223/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 7100:7300/udp
+
+# Mengaktifkan UFW tanpa prompt y/n
+echo "y" | ufw enable
+
+echo -e "${YELLOW}[4/5] Mengonfigurasi Fail2Ban (Anti-Bruteforce SSH)...${NC}"
+cat > /etc/fail2ban/jail.local <<EOF
+[sshd]
+enabled = true
+port = 22,2222,2223
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+EOF
+
+echo -e "${YELLOW}[5/5] Menerapkan konfigurasi dan merestart layanan...${NC}"
+systemctl enable fail2ban
+systemctl restart fail2ban
+
+echo ""
+echo -e "${GREEN}======================================================${NC}"
+echo -e "${GREEN} INSTALASI SELESAI! SERVER SEKARANG DILINDUNGI PENUH  ${NC}"
+echo -e "${GREEN}======================================================${NC}"
