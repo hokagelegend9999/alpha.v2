@@ -174,7 +174,7 @@ run_update() {
 
     # 2. Buat Crontab Baru (Tanpa Duplikasi)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/clean-trial
-    echo "*/3 * * * * root /usr/local/sbin/clean-trial" >> /etc/cron.d/clean-trial
+    echo "*/3 * * * * root /usr/local/sbin/clean-trial" >> /etc/cron.d/clean-trial >/dev/null 2>&1
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/daily_reboot
     echo "0 5 * * * root /sbin/reboot" >> /etc/cron.d/daily_reboot
@@ -186,10 +186,10 @@ run_update() {
     echo "0 0 * * * root /usr/local/sbin/expired-notifier" >> /etc/cron.d/expired_notifier
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_ip_ssh
-    echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh
+    echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh >/dev/null 2>&1
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_quota
-    echo "*/10 * * * * root /usr/local/sbin/limit-quota" >> /etc/cron.d/limit_quota
+    echo "*/10 * * * * root /usr/local/sbin/limit-quota" >> /etc/cron.d/limit_quota >/dev/null 2>&1
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/log.nginx
     echo "0 0 * * * root echo -n > /var/log/nginx/access.log" >> /etc/cron.d/log.nginx
@@ -201,10 +201,10 @@ run_update() {
     echo "0 0 * * * root /usr/local/sbin/clear-log" >> /etc/cron.d/logclean
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/rekam_usage
-    echo "* * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1" >> /etc/cron.d/rekam_usage
+    echo "* * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1" >> /etc/cron.d/rekam_usage >/dev/null 2>&1
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/ssh_accountant
-    echo "* * * * * root /usr/local/sbin/ssh-accountant" >> /etc/cron.d/ssh_accountant
+    echo "* * * * * root /usr/local/sbin/ssh-accountant" >> /etc/cron.d/ssh_accountant >/dev/null 2>&1
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_trojan_auto
     echo "10 0 * * * root /usr/local/sbin/xp-trojan" >> /etc/cron.d/xp_trojan_auto
