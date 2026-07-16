@@ -105,17 +105,11 @@ hokage_anim() {
 # LOGIKA UPDATE
 # ==================================================
 run_update() {
-    # 1. Download & Install FV Tunnel
-    wget -qO- fv-tunnel "https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/config/fv-tunnel" 
-    chmod +x fv-tunnel 
-    bash fv-tunnel
-    rm -rf fv-tunnel
-    
-    # 2. Bersihkan Folder sbin
+    # 1. Bersihkan Folder sbin
     rm -rf /usr/local/sbin/*
     echo -e "${CYAN}Installing SQLite3...${NC}"
     apt-get install sqlite3 -y > /dev/null 2>&1
-    # 3. Download & Ekstrak Menu
+    # 2. Download & Ekstrak Menu
     wget https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/menu/menu.zip
     unzip -o menu.zip > /dev/null 2>&1
     chmod +x menu/*
@@ -123,17 +117,17 @@ run_update() {
     rm -rf menu
     rm -rf menu.zip
     
-    # 4. Download Menu Utama
+    # 3. Download Menu Utama
     wget -q -O /usr/local/sbin/menu https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/menu
     chmod +x /usr/local/sbin/menu
     
-    # 5. Buat Folder Usage (SSH & Xray)
+    # 4. Buat Folder Usage (SSH & Xray)
     mkdir -p /etc/ssh/usage_db
     chmod 777 /etc/ssh/usage_db
     mkdir -p /etc/xray/quota_lifetime
     chmod 777 /etc/xray/quota_lifetime
     
-    # 6. FIX PERMISSIONS
+    # 5. FIX PERMISSIONS
     sed -i 's/\r$//' /usr/local/sbin/*
     chmod +x /usr/local/sbin/*
     chmod +x /usr/local/sbin/monitor_traffic
