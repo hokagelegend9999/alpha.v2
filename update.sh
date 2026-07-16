@@ -117,10 +117,6 @@ run_update() {
     rm -rf menu
     rm -rf menu.zip
     
-    # 3. Download Menu Utama
-    wget -q -O /usr/local/sbin/menu https://raw.githubusercontent.com/hokagelegend9999/alpha.v2/refs/heads/main/menu/menu
-    chmod +x /usr/local/sbin/menu
-    
     # 4. Buat Folder Usage (SSH & Xray)
     mkdir -p /etc/ssh/usage_db
     chmod 777 /etc/ssh/usage_db
