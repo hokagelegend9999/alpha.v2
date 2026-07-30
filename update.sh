@@ -205,6 +205,9 @@ run_update() {
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vless_auto
     echo "10 0 * * * root /usr/local/sbin/xp-vless" >> /etc/cron.d/xp_vless_auto
 
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/sync_exp
+    echo "10 0 * * * root /usr/local/sbin/sync-exp >/dev/null 2>&1" >> /etc/cron.d/sync_exp
+
     # 3. SET PERMISSIONS
     chmod 644 /etc/cron.d/*
 
