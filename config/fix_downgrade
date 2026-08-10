@@ -1,0 +1,120 @@
+#!/bin/bash
+# ==================================================
+# SCRIPT FIX DOWNGRADE COMPONENT (OpenVPN, HAProxy, Dropbear)
+# Target OS: Ubuntu 24.04 (Noble Numbat)
+# ==================================================
+
+clear
+echo -e "\e[32m=== MEMULAI PROSES FIX DOWNGRADE SERVICE ===\e[0m"
+
+# Pastikan dijalankan sebagai root
+if [ "${EUID}" -ne 0 ]; then
+    echo -e "\e[31m[ERROR] Anda harus menjalankan script ini sebagai root!\e[0m"
+    exit 1
+fi
+
+# 1. DOWNGRADE OPENVPN KE V2.4.12
+function downgrade_openvpn() {
+    echo -e "\n\e[33m[1/3] Mendowngrade OpenVPN ke versi 2.4.12...\e[0m"
+    systemctl stop openvpn >/dev/null 2>&1
+    systemctl stop openvpn-server@* >/dev/null 2>&1
+
+    # Tambahkan repository universe Focal sementara untuk libssl1.1
+    echo "deb http://archive.ubuntu.com/ubuntu/ focal main universe" > /etc/apt/sources.list.d/focal.list
+    apt-get update -y >/dev/null 2>&1
+    apt-get install -y libssl1.1 >/dev/null 2>&1
+
+    # Download dan install OpenVPN v2.4.12
+    local OPENVPN_URL="http://archive.ubuntu.com/ubuntu/pool/main/o/openvpn/openvpn_2.4.12-0ubuntu0.20.04.1_amd64.deb"
+    wget -q -O /tmp/openvpn_2.4.12.deb "$OPENVPN_URL"
+    
+    if [ $? -eq 0 ]; then
+        dpkg -i /tmp/openvpn_2.4.12.deb >/dev/null 2>&1
+        apt-mark hold openvpn >/dev/null 2>&1
+        echo -e "\e[32m[OK] OpenVPN v2.4.12 Berhasil Terpasang.\e[0m"
+    else
+        echo -e "\e[31m[ERROR] Gagal mengunduh OpenVPN v2.4.12.\e[0m"
+    fi
+    
+    rm -f /tmp/openvpn_2.4.12.deb
+}
+
+# 2. DOWNGRADE HAPROXY KE V2.0.33
+function downgrade_haproxy() {
+    echo -e "\n\e[33m[2/3] Mendowngrade HAProxy ke versi 2.0.33...\e[0m"
+    systemctl stop haproxy >/dev/null 2>&1
+
+    # Pastikan dependensi libssl1.1 dan liblua5.3-0 tersedia
+    apt-get install -y liblua5.3-0 >/dev/null 2>&1
+
+    # Download dan install HAProxy v2.0.33
+    local HAPROXY_URL="http://security.ubuntu.com/ubuntu/pool/main/h/haproxy/haproxy_2.0.33-0ubuntu0.1_amd64.deb"
+    wget -q -O /tmp/haproxy_2.0.33.deb "$HAPROXY_URL"
+    
+    if [ $? -eq 0 ]; then
+        dpkg -i /tmp/haproxy_2.0.33.deb >/dev/null 2>&1
+        apt-mark hold haproxy >/dev/null 2>&1
+        echo -e "\e[32m[OK] HAProxy v2.0.33 Berhasil Terpasang.\e[0m"
+    else
+        echo -e "\e[31m[ERROR] Gagal mengunduh HAProxy v2.0.33.\e[0m"
+    fi
+    
+    rm -f /tmp/haproxy_2.0.33.deb
+    
+    # Bersihkan repository sementara focal
+    rm -f /etc/apt/sources.list.d/focal.list
+    apt-get update -y >/dev/null 2>&1
+}
+
+# 3. DOWNGRADE DROPBEAR KE V2018.76 (VIA COMPILE SOURCE)
+function downgrade_dropbear() {
+    echo -e "\n\e[33m[3/3] Mendowngrade Dropbear ke versi v2018.76...\e[0m"
+    systemctl stop dropbear >/dev/null 2>&1
+
+    # Instal alat compiler yang dibutuhkan
+    apt-get update -y >/dev/null 2>&1
+    apt-get install -y wget make gcc autoconf zlib1g-dev >/dev/null 2>&1
+
+    # Download source code Dropbear v2018.76 dari GitHub resmi
+    cd ~
+    wget -q -O dropbear.tar.gz https://github.com/mkj/dropbear/archive/refs/tags/DROPBEAR_2018.76.tar.gz
+    
+    if [ -f dropbear.tar.gz ]; then
+        tar -xzf dropbear.tar.gz >/dev/null 2>&1
+        cd dropbear-DROPBEAR_2018.76
+        
+        # Konfigurasi dan kompilasi
+        autoheader >/dev/null 2>&1
+        autoconf >/dev/null 2>&1
+        ./configure --prefix=/usr >/dev/null 2>&1
+        make >/dev/null 2>&1
+        make install >/dev/null 2>&1
+        
+        cd ~
+        rm -rf dropbear-DROPBEAR_2018.76 dropbear.tar.gz
+        apt-mark hold dropbear >/dev/null 2>&1
+        echo -e "\e[32m[OK] Dropbear v2018.76 Berhasil Dikompilasi & Terpasang.\e[0m"
+    else
+        echo -e "\e[31m[ERROR] Gagal mengunduh source code Dropbear.\e[0m"
+    fi
+}
+
+# JALANKAN SEMUA FUNGSI
+downgrade_openvpn
+downgrade_haproxy
+downgrade_dropbear
+
+# RESTART DAN AKTIFKAN SEMUA SERVICE
+echo -e "\n\e[36m[+] Merestart ulang semua service...\e[0m"
+systemctl daemon-reload
+systemctl restart haproxy openvpn-server@* dropbear >/dev/null 2>&1
+systemctl enable haproxy dropbear >/dev/null 2>&1
+
+echo -e "\n=================================================="
+echo -e "\e[32m       PROSES FIX DOWNGRADE SELESAI!          \e[0m"
+echo -e "=================================================="
+echo -e "Cek versi komponen dengan perintah berikut:"
+echo -e " - openvpn --version"
+echo -e " - haproxy -v"
+echo -e " - dropbear -V"
+echo -e "=================================================="
