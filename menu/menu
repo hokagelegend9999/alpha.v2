@@ -13,109 +13,11 @@ green='\033[0;32m'
 grenbo="\e[92;1m"
 purple="\033[1;95m"
 YELL='\033[0;33m'
+r='\033[0;31m'
 
-print_gradient() {
-    local text="$1"
-    awk -v text="$text" 'BEGIN {
-        len = length(text);
-        # Definisi Warna: Emas (Gold) -> Biru (Medium Blue) -> Ungu (Blue Violet)
-        r_start=255; g_start=215; b_start=0;
-        r_mid=0;     g_mid=128;   b_mid=255;
-        r_end=138;   g_end=43;    b_end=226;
-
-        for (i=0; i<len; i++) {
-            ratio = i / (len-1);
-            if (ratio <= 0.5) {
-                # Fase 1: Emas ke Biru
-                f = ratio * 2;
-                r = int(r_start + (r_mid - r_start) * f);
-                g = int(g_start + (g_mid - g_start) * f);
-                b = int(b_start + (b_mid - b_start) * f);
-            } else {
-                # Fase 2: Biru ke Ungu
-                f = (ratio - 0.5) * 2;
-                r = int(r_mid + (r_end - r_mid) * f);
-                g = int(g_mid + (g_end - g_mid) * f);
-                b = int(b_mid + (b_end - b_mid) * f);
-            }
-            printf "\033[38;2;%d;%d;%dm%s", r, g, b, substr(text, i+1, 1);
-        }
-        printf "\033[0m\n";
-    }'
-}
-
-function run_speedtest_cool() {
-    # Definisi Warna (Gunakan \e agar lebih universal di bash)
-    local CYAN='\e[0;36m'
-    local GREEN='\e[0;32m'
-    local RED='\e[0;31m'
-    local YELLOW='\e[1;33m'
-    local BLUE='\e[0;34m'
-    local PURPLE='\e[0;35m'
-    local BOLD='\e[1m'
-    local WHITE='\e[1;37m'
-    local NC='\e[0m'
-
-    # Hapus file lama
-    rm -f /tmp/speedtest.txt
-
-    # Header Judul
-    echo -e ""
-    echo -e " ${CYAN}┌──────────────────────────────────────────┐${NC}"
-    echo -e " ${CYAN}│${NC}      ${BOLD}${YELLOW}SPEEDTEST BY HOKAGE LEGEND${NC}          ${CYAN}│${NC}"
-    echo -e " ${CYAN}└──────────────────────────────────────────┘${NC}"
-    echo -e ""
-
-    (
-        while :; do
-            for s in / - \\ \|; do
-                printf "\r ${CYAN}[${YELLOW} PROCESS ${CYAN}]${NC} ${BOLD}Sedang mengukur... %b%s%b" "${PURPLE}" "$s" "${NC}" 
-                sleep 0.1
-            done
-        done
-    ) &
-    SPIN_PID=$!
-
-    speedtest-cli --simple --secure > /tmp/speedtest.txt 2> /dev/null
-
-    kill $SPIN_PID 2>/dev/null
-    wait $SPIN_PID 2>/dev/null
-
-    printf "\r%s\r" "                                                   "
-
-    if [[ ! -s /tmp/speedtest.txt ]]; then
-        echo -e " ${RED}[ ERROR ]${NC} Gagal/Timeout. Cek koneksi internet."
-    else
-        # Parsing Data
-        PING=$(cat /tmp/speedtest.txt | grep "Ping" | awk '{print $2}')
-        UNIT_PING=$(cat /tmp/speedtest.txt | grep "Ping" | awk '{print $3}')
-        
-        DOWN=$(cat /tmp/speedtest.txt | grep "Download" | awk '{print $2}')
-        UNIT_DOWN=$(cat /tmp/speedtest.txt | grep "Download" | awk '{print $3}')
-        
-        UP=$(cat /tmp/speedtest.txt | grep "Upload" | awk '{print $2}')
-        UNIT_UP=$(cat /tmp/speedtest.txt | grep "Upload" | awk '{print $3}')
-
-        local HR="════════════════════════════════════════"
-
-        echo -e " ${CYAN}╔${HR}╗${NC}"
-        printf " ${CYAN}║${NC}${BOLD}${GREEN}%-40s${NC}${CYAN}║${NC}\n" "              RESULT DATA"
-        echo -e " ${CYAN}╠${HR}╣${NC}"
-        
-        printf " ${CYAN}║${NC}  ${BOLD}%-9s %-15s %-12s${NC} ${CYAN}║${NC}\n" "TIPE" "VALUE" "UNIT"
-        
-        echo -e " ${CYAN}╠${HR}╣${NC}"
-        
-        printf " ${CYAN}║${NC}  ${PURPLE}%-9s${NC} ${WHITE}%-15s${NC} ${YELLOW}%-12s${NC} ${CYAN}║${NC}\n" "LATENCY" "$PING" "$UNIT_PING"
-        printf " ${CYAN}║${NC}  ${GREEN}%-9s${NC} ${WHITE}%-15s${NC} ${YELLOW}%-12s${NC} ${CYAN}║${NC}\n" "DOWNLOAD" "$DOWN" "$UNIT_DOWN"
-        printf " ${CYAN}║${NC}  ${BLUE}%-9s${NC} ${WHITE}%-15s${NC} ${YELLOW}%-12s${NC} ${CYAN}║${NC}\n" "UPLOAD" "$UP" "$UNIT_UP"
-        
-        echo -e " ${CYAN}╚${HR}╝${NC}"
-    fi
-    
-    rm -f /tmp/speedtest.txt
-    echo -e ""
-    read -n 1 -s -r -p "Press any key to back..."
+# Fungsi untuk garis kuning solid (Sangat Ringan)
+print_yellow() {
+    echo -e "${y}$1${NC}"
 }
 
 IPVPS=$(curl -s ipv4.icanhazip.com)
@@ -124,7 +26,6 @@ CITY=$(cat /root/.info/.city 2>/dev/null || echo "Unknown City")
 NS=$(cat /etc/xray/dns 2>/dev/null)
 domain=$(cat /etc/xray/domain 2>/dev/null)
 RAM=$(free -m | awk 'NR==2 {print $2}')
-# Optimasi pengambilan load CPU agar tidak berat
 LOADCPU=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}')
 MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
 CORE=$(grep -c cpu[0-9] /proc/stat)
@@ -150,20 +51,17 @@ today=$(date +"%Y-%m-%d")
 d1=$(date -d "$valid" +%s)
 d2=$(date -d "$today" +%s)
 certifacate=$(((d1 - d2) / 86400))
-pink='\033[1;95m'
 blink_red='\033[5;31m'
+blink_green='\033[5;32m'
 
 if [[ "$d1" -ge "$d2" ]]; then
     if [[ "$certifacate" -le 7 ]]; then
-        # Jika sisa 7 hari ke bawah, HANYA tulisan Active yang berkedip merah
-        sts="${blink_red}Active${NC}"
+        sts="${y}(${NC}${certifacate} Hari${y}) ${blink_red}(Active)${NC}"
     else
-        # Jika hari masih panjang, tulisan Active berwarna hijau biasa
-        sts="${green}Active${NC}"
+        sts="${y}(${NC}${certifacate} Hari${y}) ${blink_green}(Active)${NC}"
     fi
 else
-    # Jika sudah expired, tulisan Expired berkedip merah
-    sts="${blink_red}Expired${NC}"
+    sts="${y}(${NC}0 Hari${y}) ${blink_red}(Expired)${NC}"
 fi
 tram=$( free -m | awk 'NR==2 {print $2}' )
 uram=$( free -m | awk 'NR==2 {print $3}' )
@@ -172,93 +70,159 @@ fram=$( free -m | awk 'NR==2 {print $4}' )
 clear
 cek_service() {
     if systemctl is-active --quiet "$1"; then
-        echo "${green}ON🟢${NC}"
+        echo -e "${green}ON ${NC}"
     else
-        echo "${RED}🔴${NC} "
+        echo -e "${RED}OFF${NC}"
     fi
 }
 
-ssh_ws_status=$(systemctl is-active --quiet ws && echo "${green}ON🟢${NC}" || echo "${RED}🔴${NC} ")
+# === DETEKSI INSTALASI CERDAS ===
+is_zivpn=false
+is_udp=false
+is_slowdns=false
+
+if [ -f "/etc/systemd/system/zivpn.service" ]; then is_zivpn=true; fi
+if [ -f "/etc/systemd/system/udp-custom.service" ]; then is_udp=true; fi
+if [ -f "/etc/systemd/system/server-sldns.service" ] || [ -f "/etc/systemd/system/client-sldns.service" ]; then is_slowdns=true; fi
+# ================================
+
+ssh_ws_status=$(systemctl is-active --quiet ws && echo -e "${green}ON ${NC}" || echo -e "${RED}OFF${NC}")
 status_ssh=$(cek_service ssh)
 status_haproxy=$(cek_service haproxy)
 status_xray=$(cek_service xray)
 status_nginx=$(cek_service nginx)
 status_dropbear=$(cek_service dropbear)
 status_udp_custom=$(cek_service udp-custom)
+status_zivpn=$(cek_service zivpn)
 
 if systemctl is-active --quiet server-sldns; then
-    status_slowdns="${green}ON🟢${NC}"
+    status_slowdns="${green}ON ${NC}"
 elif systemctl is-active --quiet client-sldns; then
-    # Cek alternatif nama service
-    status_slowdns="${green}ON🟢${NC}"
+    status_slowdns="${green}ON ${NC}"
 else
-    status_slowdns="${red}OFF🔴${NC}"
+    status_slowdns="${RED}OFF${NC}"
 fi
-# 1. VLESS (#&)
+
 vla=$(grep -E "^#& " "/etc/xray/config.json" 2>/dev/null | cut -d ' ' -f 2 | sort | uniq | wc -l)
-
-# 2. VMESS (###)
 vma=$(grep -E "^### " "/etc/xray/config.json" 2>/dev/null | cut -d ' ' -f 2 | sort | uniq | wc -l)
-
-# 3. TROJAN (#!)
 trb=$(grep -E "^#! " "/etc/xray/config.json" 2>/dev/null | cut -d ' ' -f 2 | sort | uniq | wc -l)
-
-# 4. SHADOWSOCKS (#ss#)
 ssa=$(grep -E "^#ss# " "/etc/xray/config.json" 2>/dev/null | cut -d ' ' -f 2 | sort | uniq | wc -l)
-
-# 5. SSH (UID >= 1000)
 ssh1=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l)
 
-# =================================================================
-# PADDING OTOMATIS: Memaksa angka selalu rata kiri dengan 4 karakter
-# agar posisi garis pembatas (│) tidak bergeser maju/mundur.
-pad_ssh1=$(printf "%-4s" "$ssh1")
-pad_vma=$(printf "%-4s" "$vma")
-pad_vla=$(printf "%-4s" "$vla")
-pad_trb=$(printf "%-4s" "$trb")
-pad_ssa=$(printf "%-4s" "$ssa")
-# =================================================================
-
-KANAN="\033[1;32m<\033[1;33m<\033[1;31m<\033[1;31m$NC"
-KIRI="\033[1;32m>\033[1;33m>\033[1;31m>\033[1;31m$NC"
-r="\033[1;31m" 
-a=" ${CYAN}ACCOUNT PREMIUM" 
+pad_ssh1=$(printf "%-3s" "$ssh1")
+pad_vma=$(printf "%-3s" "$vma")
+pad_vla=$(printf "%-3s" "$vla")
+pad_trb=$(printf "%-3s" "$trb")
+pad_ssa=$(printf "%-3s" "$ssa")
 
 echo -e " "
-print_gradient "══════════════════════════════════════════════════════════"
-print_gradient "                    AUTOSCRIPT VPS PREMIUM       "
-print_gradient "         ══════════════════════════════════════════"
-echo -e "$NC$y System OS ${NC}        $Blue=$NC $MODEL${NC}"
-echo -e "$NC$y ISP ${NC}              $Blue=$NC $ISP${NC}"
-echo -e "$NC$y CITY ${NC}             $Blue=$NC $CITY${NC}"
-echo -e "$NC$y Uptime Server ${NC}    $Blue=$NC $SERONLINE${NC}"
-echo -e "$NC$y Exp Script$NC        $Blue=$NC ${pink}$exp $y $certifacate Days${NC} ($sts)"
-echo -e "$NC$y Sub Domain$NC        $Blue=$NC $domain${NC}"
-print_gradient "══════════════════════════════════════════════════════════"
-print_gradient "                   INFORMATION ACCOUNT ON VPS  "
-print_gradient "══════════════════════════════════════════════════════════"
-# Penerapan variabel pad_ agar '=' dan '│' selalu sejajar rata
-echo -e "${z}$NC${z} SSH/OVPN/UDP${NC}   $y=$NC $pad_ssh1 $NC${y}│$NC $NC${y}│ ${z}$NC${z} USER SCRIPT$NC $y=$NC $user_script"
-echo -e "${z}$NC${z} VMESS/WS/GRPC${NC}  $y=$NC $pad_vma $NC${Blue}│$NC $NC${Blue}│ ${z}$NC${z} IP ADDRESS  $y=$NC $IPVPS${NC}"
-echo -e "${z}$NC${z} VLESS/WS/GRPC${NC}  $y=$NC $pad_vla $NC${r}│$NC $NC${r}│ ${z}$NC${z} Server RAM ${NC} $y=$NC $tram MB $NC"
-echo -e "${z}$NC${z} TROJAN/WS/GRPC${NC} $y=$NC $pad_trb $NC${z}│$NC $NC${z}│ ${z}$NC${z} Core Cpu ${NC}   $y=$NC $CORE${NC}"
-echo -e "${z}$NC${z} SHADOW/WS/GRPC${NC} $y=$NC $pad_ssa $NC${green}│$NC $NC${green}│  ${z}$NC${z}Date ${NC}       $y=$NC $DATEVPS${NC}"
-print_gradient "══════════════════════════════════════════════════════════"
-print_gradient "                   INFORMATION SERVICE ON VPS  "
-print_gradient "══════════════════════════════════════════════════════════"
-echo -e "${NC}$y SSH$NC     : $status_ssh" "  $y NGINX$NC      : $status_nginx" "    $y XRAY$NC    : $status_xray  $NC" 
-echo -e "${NC}$y WS-ePRO$NC : $ssh_ws_status"  " $y  DROPBEAR$NC   : $status_dropbear" "    $y HAPROXY$NC : $status_haproxy  $NC" 
-print_gradient "══════════════════════════════════════════════════════════"
-print_gradient "                   ALL FITUR SC TUNNELING "
-print_gradient "══════════════════════════════════════════════════════════"
-echo -e "${z}$NC [${r}01${NC}]$green MENU SSH$NC         $NC${y}│$NC  	[${r}06${NC}]$green MENU TRIAL$NC     ${z} $NC"
-echo -e "${z}$NC [${r}02${NC}]$green MENU VMESS$NC       $NC${Blue}│$NC  	[${r}07${NC}]$green SPEEDTEST$NC    ${z} $NC"
-echo -e "${z}$NC [${r}03${NC}]$green MENU VLESS$NC       $NC${r}│$NC  	[${r}08${NC}]$green MENU UTILITY$NC   ${z} $NC"
-echo -e "${z}$NC [${r}04${NC}]$green MENU TROJAN$NC      $NC${green}│$NC  	[${r}10${NC}]$green CEK VPS$NC        ${z} $NC"
-echo -e "${z}$NC [${r}05${NC}]$green MENU SSWS$NC        $NC${green}│$NC  	[${r}12${NC}]$green MENU WARP       ${z} $NC"        
-print_gradient "══════════════════════════════════════════════════════════"
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "                ${y}AUTOSCRIPT VPS PREMIUM${NC}                "
+print_yellow "           ══════════════════════════════════════════      "
+echo -e " $NC$y System OS    $Blue=$NC $MODEL${NC}"
+echo -e " $NC$y ISP          $Blue=$NC $ISP${NC}"
+echo -e " $NC$y City         $Blue=$NC $CITY${NC}"
+echo -e " $NC$y Uptime       $Blue=$NC $SERONLINE${NC}"
+echo -e " $NC$y Expired      $Blue=$NC $exp $sts${NC}"
+echo -e " $NC$y Domain       $Blue=$NC $domain${NC}"
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "              ${CYAN}INFORMATION ACCOUNT ON VPS${NC}              "
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e " $NC$z SSH/OVPN/UDP $y=$NC $pad_ssh1 $NC${y}│$NC $z USER $y=$NC $user_script"
+echo -e " $NC$z VMESS/WS/TLS $y=$NC $pad_vma $NC${Blue}│$NC $z IPV4 $y=$NC $IPVPS${NC}"
+echo -e " $NC$z VLESS/WS/TLS $y=$NC $pad_vla $NC${RED}│$NC $z RAM  $y=$NC $tram MB $NC"
+echo -e " $NC$z TROJAN/GRPC  $y=$NC $pad_trb $NC${z}│$NC $z CPU  $y=$NC $CORE${NC}"
+echo -e " $NC$z SHADOWSOCKS  $y=$NC $pad_ssa $NC${green}│$NC $z DATE $y=$NC $DATEVPS${NC}"
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "              ${purple}INFORMATION SERVICE ON VPS${NC}              "
+print_yellow "══════════════════════════════════════════════════════════"
+
+# FUNGSI CERDAS UNTUK PENYESUAIAN SPASI NAMA SERVICE
+get_padded_name() {
+    local name="$1"
+    local len=${#name}
+    local pad=$(( 9 - len ))
+    local spaces=""
+    for ((p=0; p<pad; p++)); do spaces+=" "; done
+    REPLY_NAME="${name}${spaces}"
+}
+
+# === FORMAT TABEL SERVICE DINAMIS & PADAT ===
+# Mengumpulkan semua layanan yang aktif
+srv_names=("SSH" "NGINX" "XRAY" "WS-ePRO" "DROPBEAR" "HAPROXY")
+srv_status=("$status_ssh" "$status_nginx" "$status_xray" "$ssh_ws_status" "$status_dropbear" "$status_haproxy")
+
+if $is_zivpn; then srv_names+=("ZIVPN"); srv_status+=("$status_zivpn"); fi
+if $is_udp; then srv_names+=("UDP-CSTM"); srv_status+=("$status_udp_custom"); fi
+if $is_slowdns; then srv_names+=("SLOWDNS"); srv_status+=("$status_slowdns"); fi
+
+# Mencetak tabel per 3 kolom dengan rapi dari kiri ke kanan
+for ((i=0; i<${#srv_names[@]}; i+=3)); do
+    get_padded_name "${srv_names[$i]}"
+    c1=" ${y}${REPLY_NAME}${NC}: ${srv_status[$i]}    "
+
+    if [[ $((i+1)) -lt ${#srv_names[@]} ]]; then
+        get_padded_name "${srv_names[$i+1]}"
+        c2="  ${y}${REPLY_NAME}${NC}: ${srv_status[$i+1]}      "
+    else
+        c2="                      "
+    fi
+
+    if [[ $((i+2)) -lt ${#srv_names[@]} ]]; then
+        get_padded_name "${srv_names[$i+2]}"
+        c3="  ${y}${REPLY_NAME}${NC}: ${srv_status[$i+2]}"
+    else
+        c3=""
+    fi
+
+    echo -e "${c1}${c2}${c3}"
+done
+# ============================================
+
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "                ${green}ALL FITUR SC TUNNELING${NC}                "
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "${z}$NC [${RED}01${NC}]$green MENU SSH$NC         $NC${y}│$NC  [${RED}06${NC}]$green MENU TRIAL$NC     ${z} $NC"
+echo -e "${z}$NC [${RED}02${NC}]$green MENU VMESS$NC       $NC${Blue}│$NC  [${RED}07${NC}]$green SPEEDTEST$NC       ${z} $NC"
+echo -e "${z}$NC [${RED}03${NC}]$green MENU VLESS$NC       $NC${RED}│$NC  [${RED}08${NC}]$green MENU UTILITY$NC   ${z} $NC"
+echo -e "${z}$NC [${RED}04${NC}]$green MENU TROJAN$NC      $NC${green}│$NC  [${RED}10${NC}]$green CEK VPS$NC        ${z} $NC"
+
+# === DAFTAR MENU DINAMIS PADAT ===
+# Mengumpulkan menu tambahan yang aktif secara berurutan
+active_ids=(5)
+if $is_slowdns; then active_ids+=(11); fi
+if $is_zivpn; then active_ids+=(12); fi
+if $is_udp; then active_ids+=(13); fi
+
+# Mencetak menu tambahan per 2 kolom dan memastikan garis lurus
+for ((i=0; i<${#active_ids[@]}; i+=2)); do
+    id_left=${active_ids[$i]}
+    id_right=${active_ids[$i+1]}
+
+    case $id_left in
+        5) str_left="[${RED}05${NC}]${green} MENU SSWS${NC}        " ;;
+        11) str_left="[${RED}11${NC}]${green} MENU SLOWDNS${NC}     " ;;
+        12) str_left="[${RED}12${NC}]${green} MENU ZIVPN${NC}       " ;;
+        13) str_left="[${RED}13${NC}]${green} MENU UDP${NC}         " ;;
+    esac
+
+    if [[ -z "$id_right" ]]; then
+        str_right="                    " # Pengunci presisi 20 karakter jika kosong
+    else
+        case $id_right in
+            11) str_right="[${RED}11${NC}]${green} MENU SLOWDNS${NC}   " ;;
+            12) str_right="[${RED}12${NC}]${green} MENU ZIVPN${NC}     " ;;
+            13) str_right="[${RED}13${NC}]${green} MENU UDP${NC}       " ;;
+        esac
+    fi
+
+    echo -e "${z}$NC ${str_left}${NC}${y}│${NC}  ${str_right}${z} $NC"
+done
+# =================================
+
+print_yellow "══════════════════════════════════════════════════════════"
 echo -e ""
-read -p " PILIH MENU DENGAN CARA KETIK 1/10 : " opt
+read -p " PILIH MENU DENGAN CARA KETIK ANGKA : " opt
 echo -e ""
 case $opt in
 1 | 01) clear ; m-sshws ;;
@@ -267,11 +231,12 @@ case $opt in
 4 | 04) clear ; m-trojan ;;
 5 | 05) clear ; m-ssws ;;
 6 | 06) clear ; m-trial ;;
-7 | 07) clear ; run_speedtest_cool ; menu ;;
+7 | 07) clear ; speedtest ;;
 8 | 08) clear ; menu-x ;;
 10 | 10) clear ; cek-vps ;;
 11 | 11) clear ; menu-slowdns ;;
-12 | 12) clear ; menu-warp ;;
+12 | 12) clear ; /usr/local/sbin/zivpn-menu ;;
+13 | 13) clear ; menu-udp ;;
 0 | 00) exit ;;
 x) menu ;;
 *) clear ; echo -e ; menu ;;
