@@ -159,54 +159,72 @@ run_update() {
     rm -f /etc/cron.d/xp_trojan_auto
     rm -f /etc/cron.d/xp_vmess_auto
     rm -f /etc/cron.d/xp_vless_auto
+    rm -f /etc/cron.d/sync_exp
     
     sed -i "/limit-quota/d" /etc/crontab 2>/dev/null
 
-    # 2. Buat Crontab Baru (Tanpa Duplikasi)
+    # 2. Buat Crontab Baru (Sesuai Standar Ubuntu/Debian)
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/clean-trial
-    echo "*/3 * * * * root /usr/local/sbin/clean-trial" >> /etc/cron.d/clean-trial >/dev/null 2>&1
+    echo "*/3 * * * * root /usr/local/sbin/clean-trial >/dev/null 2>&1" >> /etc/cron.d/clean-trial
+    echo "" >> /etc/cron.d/clean-trial
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/daily_reboot
-    echo "0 5 * * * root /sbin/reboot" >> /etc/cron.d/daily_reboot
+    echo "0 5 * * * root /sbin/reboot >/dev/null 2>&1" >> /etc/cron.d/daily_reboot
+    echo "" >> /etc/cron.d/daily_reboot
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/delexp
-    echo "10 0 * * * root /usr/local/sbin/delexp" >> /etc/cron.d/delexp
+    echo "10 0 * * * root /usr/local/sbin/delexp >/dev/null 2>&1" >> /etc/cron.d/delexp
+    echo "" >> /etc/cron.d/delexp
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/expired_notifier
-    echo "0 0 * * * root /usr/local/sbin/expired-notifier" >> /etc/cron.d/expired_notifier
+    echo "0 0 * * * root /usr/local/sbin/expired-notifier >/dev/null 2>&1" >> /etc/cron.d/expired_notifier
+    echo "" >> /etc/cron.d/expired_notifier
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_ip_ssh
-    echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh" >> /etc/cron.d/limit_ip_ssh >/dev/null 2>&1
+    echo "*/5 * * * * root /usr/local/sbin/limit-ip-ssh >/dev/null 2>&1" >> /etc/cron.d/limit_ip_ssh
+    echo "" >> /etc/cron.d/limit_ip_ssh
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/limit_quota
-    echo "*/10 * * * * root /usr/local/sbin/limit-quota" >> /etc/cron.d/limit_quota >/dev/null 2>&1
+    echo "*/10 * * * * root /usr/local/sbin/limit-quota >/dev/null 2>&1" >> /etc/cron.d/limit_quota
+    echo "" >> /etc/cron.d/limit_quota
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/log.nginx
     echo "0 0 * * * root echo -n > /var/log/nginx/access.log" >> /etc/cron.d/log.nginx
+    echo "" >> /etc/cron.d/log.nginx
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/log.xray
     echo "0 0 * * * root echo -n > /var/log/xray/access.log" >> /etc/cron.d/log.xray
+    echo "" >> /etc/cron.d/log.xray
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/logclean
-    echo "0 0 * * * root /usr/local/sbin/clear-log" >> /etc/cron.d/logclean
+    echo "0 0 * * * root /usr/local/sbin/clear-log >/dev/null 2>&1" >> /etc/cron.d/logclean
+    echo "" >> /etc/cron.d/logclean
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/rekam_usage
-    echo "* * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1" >> /etc/cron.d/rekam_usage >/dev/null 2>&1
+    echo "* * * * * root /usr/local/sbin/rekam-usage >/dev/null 2>&1" >> /etc/cron.d/rekam_usage
+    echo "" >> /etc/cron.d/rekam_usage
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/ssh_accountant
-    echo "* * * * * root /usr/local/sbin/ssh-accountant" >> /etc/cron.d/ssh_accountant >/dev/null 2>&1
+    echo "* * * * * root /usr/local/sbin/ssh-accountant >/dev/null 2>&1" >> /etc/cron.d/ssh_accountant
+    echo "" >> /etc/cron.d/ssh_accountant
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_trojan_auto
-    echo "10 0 * * * root /usr/local/sbin/xp-trojan" >> /etc/cron.d/xp_trojan_auto
+    echo "10 0 * * * root /usr/local/sbin/xp-trojan >/dev/null 2>&1" >> /etc/cron.d/xp_trojan_auto
+    echo "" >> /etc/cron.d/xp_trojan_auto
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vmess_auto
-    echo "10 0 * * * root /usr/local/sbin/xp-vmess" >> /etc/cron.d/xp_vmess_auto
+    echo "10 0 * * * root /usr/local/sbin/xp-vmess >/dev/null 2>&1" >> /etc/cron.d/xp_vmess_auto
+    echo "" >> /etc/cron.d/xp_vmess_auto
 
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/xp_vless_auto
-    echo "10 0 * * * root /usr/local/sbin/xp-vless" >> /etc/cron.d/xp_vless_auto
+    echo "10 0 * * * root /usr/local/sbin/xp-vless >/dev/null 2>&1" >> /etc/cron.d/xp_vless_auto
+    echo "" >> /etc/cron.d/xp_vless_auto
 
+    # Catatan: sync_exp sebelumnya Anda atur '10 0 * * *' pada pertanyaan sebelumnya.
+    # Namun jika tujuannya mengecek akun kedaluwarsa secara realtime (misal per 15 menit), ubah jadi '*/15 * * * *'
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/sync_exp
     echo "10 0 * * * root /usr/local/sbin/sync-exp >/dev/null 2>&1" >> /etc/cron.d/sync_exp
+    echo "" >> /etc/cron.d/sync_exp
 
     # 3. SET PERMISSIONS
     chmod 644 /etc/cron.d/*
