@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==========================================
-#  HOKAGE LEGEND - UPDATE SCRIPT (THEMED)
+#  HOKAGE LEGEND - UPDATE SCRIPT (LITE)
 # ==========================================
 
 # --- DEFINISI WARNA TEMA ---
@@ -16,101 +16,22 @@ WHITE='\033[0;37m'
 BOLD='\033[1m'
 BLINK='\033[5m'
 
-# --- INSTALL LOLCAT (JIKA BELUM ADA) ---
-if ! command -v lolcat &> /dev/null; then
-    apt-get install ruby -y &> /dev/null
-    gem install lolcat &> /dev/null
-fi
-
 clear
 
 # ==================================================
-# FUNGSI GRADASI (SESUAI TEMA HOKAGE)
-# ==================================================
-print_gradient() {
-    local text="$1"
-    awk -v text="$text" 'BEGIN {
-        len = length(text);
-        r_start=255; g_start=215; b_start=0;
-        r_mid=0;      g_mid=128;   b_mid=255;
-        r_end=138;    g_end=43;    b_end=226;
-        for (i=0; i<len; i++) {
-            ratio = i / (len-1);
-            if (ratio <= 0.5) {
-                f = ratio * 2;
-                r = int(r_start + (r_mid - r_start) * f);
-                g = int(g_start + (g_mid - g_start) * f);
-                b = int(b_start + (b_mid - b_start) * f);
-            } else {
-                f = (ratio - 0.5) * 2;
-                r = int(r_mid + (r_end - r_mid) * f);
-                g = int(g_mid + (g_end - g_mid) * f);
-                b = int(b_mid + (b_end - b_mid) * f);
-            }
-            printf "\033[38;2;%d;%d;%dm%s", r, g, b, substr(text, i+1, 1);
-        }
-        printf "\033[0m\n";
-    }'
-}
-
-# --- FUNGSI ANIMASI LOADING PREMIUM ---
-hokage_anim() {
-    CMD="$1"
-    
-    # Menjalankan perintah update di background
-    (
-        [[ -e $HOME/fim ]] && rm $HOME/fim
-        $CMD >/dev/null 2>&1
-        touch $HOME/fim
-    ) >/dev/null 2>&1 &
-    
-    PID=$! # Ambil Process ID
-    
-    tput civis # Sembunyikan kursor
-    
-    # Loop animasi selama proses berjalan
-    while [ -d /proc/$PID ]; do
-        # Frame 1
-        echo -ne "\r${CYAN} [${ORANGE}●${WHITE}•••••••••${CYAN}] ${PURPLE}Downloading Data...${NC}"
-        sleep 0.2
-        # Frame 2
-        echo -ne "\r${CYAN} [${ORANGE}••${WHITE}••••••••${CYAN}] ${PURPLE}Verifying Files... ${NC}"
-        sleep 0.2
-        # Frame 3
-        echo -ne "\r${CYAN} [${ORANGE}••••${WHITE}••••••${CYAN}] ${PURPLE}Unpacking Data...  ${NC}"
-        sleep 0.2
-        # Frame 4
-        echo -ne "\r${CYAN} [${ORANGE}••••••${WHITE}••••${CYAN}] ${PURPLE}Configuring...     ${NC}"
-        sleep 0.2
-        # Frame 5
-        echo -ne "\r${CYAN} [${ORANGE}••••••••${WHITE}••${CYAN}] ${PURPLE}Setting Cronjob... ${NC}"
-        sleep 0.2
-        # Frame 6
-        echo -ne "\r${CYAN} [${ORANGE}••••••••••${CYAN}] ${PURPLE}Finalizing...      ${NC}"
-        sleep 0.2
-        
-        # Cek jika proses selesai via file flag
-        if [[ -e $HOME/fim ]]; then
-            rm $HOME/fim
-            break
-        fi
-    done
-    
-    # Tampilan Sukses
-    echo -ne "\r${CYAN} [${GREEN}██████████${CYAN}] ${GREEN}${BOLD}UPDATE SUCCESS!    ${NC}\n"
-    tput cnorm # Tampilkan kursor kembali
-}
-
-# ==================================================
-# LOGIKA UPDATE
+# LOGIKA UPDATE UTAMA
 # ==================================================
 run_update() {
+    echo -e "${CYAN}[*] Memulai pembaruan sistem...${NC}"
+    
     # 1. Bersihkan Folder sbin
     rm -rf /usr/local/sbin/*
-    echo -e "${CYAN}Installing SQLite3...${NC}"
+    echo -e "${CYAN}[*] Installing SQLite3...${NC}"
     apt-get install sqlite3 -y > /dev/null 2>&1
+    
     # 2. Download & Ekstrak Menu
-    wget https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/menu/menu.zip
+    echo -e "${CYAN}[*] Mengunduh file menu terbaru...${NC}"
+    wget -q https://github.com/hokagelegend9999/alpha.v2/raw/refs/heads/main/menu/menu.zip
     unzip -o menu.zip > /dev/null 2>&1
     chmod +x menu/*
     mv menu/* /usr/local/sbin/
@@ -124,6 +45,7 @@ run_update() {
     chmod 777 /etc/xray/quota_lifetime
     
     # 5. FIX PERMISSIONS
+    echo -e "${CYAN}[*] Mengatur perizinan file...${NC}"
     sed -i 's/\r$//' /usr/local/sbin/*
     chmod +x /usr/local/sbin/*
     chmod +x /usr/local/sbin/monitor_traffic
@@ -143,6 +65,7 @@ run_update() {
     # ------------------------------------------
     # SETTING CRON JOB (XP UPDATE TERBARU)
     # ------------------------------------------
+    echo -e "${CYAN}[*] Mengkonfigurasi Cronjob...${NC}"
 
     # 1. Bersihkan crontab lama agar tidak bentrok
     rm -f /etc/cron.d/clean-trial
@@ -160,6 +83,7 @@ run_update() {
     rm -f /etc/cron.d/xp_vmess_auto
     rm -f /etc/cron.d/xp_vless_auto
     rm -f /etc/cron.d/sync_exp
+    rm -f /etc/cron.d/reset-bulanan
     
     sed -i "/limit-quota/d" /etc/crontab 2>/dev/null
 
@@ -220,16 +144,19 @@ run_update() {
     echo "10 0 * * * root /usr/local/sbin/xp-vless >/dev/null 2>&1" >> /etc/cron.d/xp_vless_auto
     echo "" >> /etc/cron.d/xp_vless_auto
 
-    # Catatan: sync_exp sebelumnya Anda atur '10 0 * * *' pada pertanyaan sebelumnya.
-    # Namun jika tujuannya mengecek akun kedaluwarsa secara realtime (misal per 15 menit), ubah jadi '*/15 * * * *'
     echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/sync_exp
     echo "10 0 * * * root /usr/local/sbin/sync-exp >/dev/null 2>&1" >> /etc/cron.d/sync_exp
     echo "" >> /etc/cron.d/sync_exp
+
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" > /etc/cron.d/reset-bulanan
+    echo "10 0 * * * root /usr/local/sbin/reset-bulanan >/dev/null 2>&1" >> /etc/cron.d/reset-bulanan
+    echo "" >> /etc/cron.d/reset-bulanan
 
     # 3. SET PERMISSIONS
     chmod 644 /etc/cron.d/*
 
     # 4. Restart Daemon Cron
+    echo -e "${CYAN}[*] Restarting services...${NC}"
     systemctl restart cron 2>/dev/null || service cron restart 2>/dev/null
 }
 
@@ -239,19 +166,20 @@ run_update() {
 rm -rf update.sh
 clear
 echo -e ""
-print_gradient "╭══════════════════════════════════════════╮"
-print_gradient "│      HOKAGE LEGEND SYSTEM UPDATER        │"
-print_gradient "╰══════════════════════════════════════════╯"
+echo -e "${CYAN}╭══════════════════════════════════════════╮${NC}"
+echo -e "${CYAN}│      HOKAGE LEGEND SYSTEM UPDATER        │${NC}"
+echo -e "${CYAN}╰══════════════════════════════════════════╯${NC}"
 echo -e ""
 echo -e "  ${ORANGE}Please wait while we update your resources...${NC}"
 echo -e ""
 
-hokage_anim 'run_update'
+# Langsung jalankan fungsi tanpa animasi loop
+run_update
 
 echo -e ""
-print_gradient "╭══════════════════════════════════════════╮"
-print_gradient "│          UPDATE COMPLETED !!             │"
-print_gradient "╰══════════════════════════════════════════╯"
+echo -e "${GREEN}╭══════════════════════════════════════════╮${NC}"
+echo -e "${GREEN}│          UPDATE COMPLETED !!             │${NC}"
+echo -e "${GREEN}╰══════════════════════════════════════════╯${NC}"
 echo -e ""
 read -n 1 -s -r -p " Press [ Enter ] to back to menu "
 menu
