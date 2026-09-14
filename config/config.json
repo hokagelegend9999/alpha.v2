@@ -263,6 +263,71 @@
           "host": ""
         }
       }
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10016,
+      "protocol": "vless",
+      "settings": {
+        "decryption": "none",
+        "clients": [
+          {
+            "id": "1d1c1d94-6987-4658-a4dc-8821a30fe7e0"
+#vlessxhttp
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/vless-xhttp",
+          "host": ""
+        }
+      }
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10017,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "1d1c1d94-6987-4658-a4dc-8821a30fe7e0",
+            "alterId": 0
+#vmessxhttp
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/vmess-xhttp",
+          "host": ""
+        }
+      }
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 10018,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "1d1c1d94-6987-4658-a4dc-8821a30fe7e0"
+#trojanxhttp
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/trojan-xhttp",
+          "host": ""
+        }
+      }
     }
   ],
   "outbounds": [
