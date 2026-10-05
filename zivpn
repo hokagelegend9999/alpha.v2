@@ -60,7 +60,7 @@ echo -e "\n${GREEN}[3/8] Mengunduh Core ZiVPN (AMD64)...${NC}"
 mkdir -p /etc/zivpn
 
 # Download Binary AMD64 (Fix Exec Format Error)
-wget -q -O /usr/local/bin/zivpn https://github.com/zahidbd2/udp-zivpn/raw/main/bin/zivpn-amd64
+wget -q -O /usr/local/bin/zivpn https://raw.githubusercontent.com/zahidbd2/udp-zivpn/refs/heads/main/zi.sh
 chmod +x /usr/local/bin/zivpn
 
 # Buat Config Default secara manual (Aman & Fix Port 5667)
