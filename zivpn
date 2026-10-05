@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==========================================
 #   ZIVPN ULTIMATE INSTALLER (FIXED EDITION)
-#   Fixed by: Assistant (Auto-Sync & Anti-Reboot)
+#   Fixed by: Assistant (Auto-Sync, Anti-Reboot & Auto-Cleanup)
 #   For Architecture: AMD64 / x86_64
 # ==========================================
 
@@ -20,7 +20,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 # ==========================================
 #  1. PRE-INSTALL: CEK & HAPUS VERSI LAMA
 # ==========================================
-echo -e "\n${YELLOW}[1/8] Membersihkan Sistem...${NC}"
+echo -e "\n${YELLOW}[1/9] Membersihkan Sistem...${NC}"
 
 if [[ -f /etc/systemd/system/zivpn.service ]] || [[ -d /etc/zivpn ]]; then
     echo -e "   ⚠️  Instalasi lama ditemukan. Menghapus..."
@@ -31,7 +31,7 @@ if [[ -f /etc/systemd/system/zivpn.service ]] || [[ -d /etc/zivpn ]]; then
     rm -f /usr/local/sbin/zivpn-menu
     rm -f /usr/local/sbin/xp-zivpn
     rm -f /usr/local/bin/zivpn-sync
-    rm -f /usr/local/bin/zivpn # <--- FIX 1: Wajib hapus file binary korup yang lama
+    rm -f /usr/local/bin/zivpn # Wajib hapus file binary korup yang lama
     
     # Bersihkan Cronjob Lama
     sed -i '/xp-zivpn/d' /var/spool/cron/crontabs/root 2>/dev/null
@@ -41,16 +41,14 @@ if [[ -f /etc/systemd/system/zivpn.service ]] || [[ -d /etc/zivpn ]]; then
     echo -e "   ✅ Bersih."
 else
     echo -e "   ✅ Sistem bersih."
-    # Tetap pastikan binary tidak ada
     rm -f /usr/local/bin/zivpn
 fi
 
 # ==========================================
 #  2. INSTALL DEPENDENCIES (CHRONY FIX)
 # ==========================================
-echo -e "\n${GREEN}[2/8] Menginstall Paket Pendukung...${NC}"
+echo -e "\n${GREEN}[2/9] Menginstall Paket Pendukung...${NC}"
 apt-get update -y >/dev/null 2>&1
-# Menambahkan jq dan iptables-persistent untuk keperluan Auto-Sync & Routing
 apt-get install -y wget curl jq net-tools cron bc chrony iptables iptables-persistent netfilter-persistent openssl >/dev/null 2>&1
 
 systemctl enable chrony >/dev/null 2>&1
@@ -59,7 +57,7 @@ systemctl start chrony >/dev/null 2>&1
 # ==========================================
 #  3. INSTALL CORE ZIVPN (MANUAL FIX)
 # ==========================================
-echo -e "\n${GREEN}[3/8] Mengunduh Core ZiVPN (AMD64)...${NC}"
+echo -e "\n${GREEN}[3/9] Mengunduh Core ZiVPN (AMD64)...${NC}"
 mkdir -p /etc/zivpn
 
 # Download menggunakan cURL (lebih stabil tangani redirect GitHub Releases)
@@ -100,7 +98,7 @@ sysctl -w net.core.wmem_max=16777216 >/dev/null 2>&1
 # ==========================================
 #  4. SCRIPT AUTO-SYNC (ANTI-ERROR JAM 12)
 # ==========================================
-echo -e "${GREEN}[4/8] Memasang Auto-Sync User (Zivpn-Sync)...${NC}"
+echo -e "${GREEN}[4/9] Memasang Auto-Sync User (Zivpn-Sync)...${NC}"
 cat > /usr/local/bin/zivpn-sync << 'EOF'
 #!/bin/bash
 CONFIG_FILE="/etc/zivpn/config.json"
@@ -120,7 +118,7 @@ chmod +x /usr/local/bin/zivpn-sync
 # ==========================================
 #  5. SYSTEMD SERVICE (ANTI-BENGONG REBOOT)
 # ==========================================
-echo -e "${GREEN}[5/8] Konfigurasi Systemd Service...${NC}"
+echo -e "${GREEN}[5/9] Konfigurasi Systemd Service...${NC}"
 cat <<EOF > /etc/systemd/system/zivpn.service
 [Unit]
 Description=zivpn VPN Server
@@ -148,23 +146,20 @@ systemctl daemon-reload
 # ==========================================
 #  6. IPTABLES ROUTING (REDIRECT PORT)
 # ==========================================
-echo -e "${GREEN}[6/8] Memasang Routing Iptables (REDIRECT)...${NC}"
-# Hapus DNAT lama jika ada agar tidak bentrok
+echo -e "${GREEN}[6/9] Memasang Routing Iptables (REDIRECT)...${NC}"
 iptables -t nat -D PREROUTING -i $(ip -4 route ls|grep default|grep -Po '(?<=dev )(\S+)'|head -1) -p udp --dport 6000:19999 -j DNAT --to-destination :5667 2>/dev/null
 
-# Pasang Routing REDIRECT yang stabil
 iptables -t nat -A PREROUTING -p udp --dport 6000:19999 -j REDIRECT --to-ports 5667
 iptables -I INPUT -p udp --dport 5667 -j ACCEPT
 iptables -I INPUT -p udp -m multiport --dports 6000:19999 -j ACCEPT
 
-# Simpan Iptables permanen
 netfilter-persistent save >/dev/null 2>&1
 iptables-save > /etc/iptables.up.rules
 
 # ==========================================
-#  8. FINALISASI & STARTING
+#  7. FINALISASI & STARTING
 # ==========================================
-echo -e "\n${GREEN}[8/8] Menjalankan Service...${NC}"
+echo -e "\n${GREEN}[7/9] Menjalankan Service...${NC}"
 
 systemctl enable zivpn >/dev/null 2>&1
 systemctl restart zivpn >/dev/null 2>&1
@@ -172,12 +167,18 @@ systemctl restart zivpn >/dev/null 2>&1
 PORT_ZIVPN=$(grep -o '"listen": *"[^"]*"' /etc/zivpn/config.json | cut -d'"' -f4 | sed 's/://g' | sed 's/0.0.0.0//g')
 [ -z "$PORT_ZIVPN" ] && PORT_ZIVPN="5667"
 
-# Fix Exclude Port di UDP Custom (jika ada)
 if [ -f "/etc/systemd/system/udp-custom.service" ]; then
     sed -i "s|server -exclude .*|server -exclude 22,53,68,$PORT_ZIVPN|g" /etc/systemd/system/udp-custom.service
     systemctl daemon-reload
     systemctl restart udp-custom
 fi
+
+# ==========================================
+#  8. CLEANUP FILE SISA INSTALASI
+# ==========================================
+echo -e "${GREEN}[8/9] Membersihkan file sisa instalasi...${NC}"
+rm -f zi.sh zivpn zivpn.* update 2>/dev/null
+echo -e "   ✅ File sampah berhasil dihapus."
 
 STATUS=$(systemctl is-active zivpn)
 
@@ -197,4 +198,5 @@ echo " - Binary Path  : /usr/local/bin/zivpn"
 echo " - Port ZiVPN   : $PORT_ZIVPN"
 echo " - Auto-Sync    : ACTIVE (Anti-Reset)"
 echo " - Iptables     : REDIRECT (Anti-Reboot)"
+echo " - Auto-Cleanup : SUCCESS"
 echo "============================================"
