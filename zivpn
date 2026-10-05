@@ -31,6 +31,7 @@ if [[ -f /etc/systemd/system/zivpn.service ]] || [[ -d /etc/zivpn ]]; then
     rm -f /usr/local/sbin/zivpn-menu
     rm -f /usr/local/sbin/xp-zivpn
     rm -f /usr/local/bin/zivpn-sync
+    rm -f /usr/local/bin/zivpn # <--- FIX 1: Wajib hapus file binary korup yang lama
     
     # Bersihkan Cronjob Lama
     sed -i '/xp-zivpn/d' /var/spool/cron/crontabs/root 2>/dev/null
@@ -40,6 +41,8 @@ if [[ -f /etc/systemd/system/zivpn.service ]] || [[ -d /etc/zivpn ]]; then
     echo -e "   ✅ Bersih."
 else
     echo -e "   ✅ Sistem bersih."
+    # Tetap pastikan binary tidak ada
+    rm -f /usr/local/bin/zivpn
 fi
 
 # ==========================================
@@ -59,9 +62,18 @@ systemctl start chrony >/dev/null 2>&1
 echo -e "\n${GREEN}[3/8] Mengunduh Core ZiVPN (AMD64)...${NC}"
 mkdir -p /etc/zivpn
 
-# Download Binary AMD64 (Fix Exec Format Error)
-wget -q -O /usr/local/bin/zivpn https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64
+# Download menggunakan cURL (lebih stabil tangani redirect GitHub Releases)
+curl -sSL "https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64" -o /usr/local/bin/zivpn
+
+# Validasi hasil unduhan (Mencegah error 203/EXEC terulang)
+if [ ! -s /usr/local/bin/zivpn ]; then
+    echo -e "\n${RED}GAGAL: File binary gagal diunduh atau berukuran 0 byte!${NC}"
+    echo -e "Sistem membatalkan instalasi. Silakan periksa koneksi internet VPS Anda."
+    exit 1
+fi
+
 chmod +x /usr/local/bin/zivpn
+echo -e "   ✅ Unduhan berhasil diverifikasi."
 
 # Buat Config Default secara manual (Aman & Fix Port 5667)
 cat > /etc/zivpn/config.json <<EOF
@@ -155,7 +167,7 @@ iptables-save > /etc/iptables.up.rules
 echo -e "\n${GREEN}[8/8] Menjalankan Service...${NC}"
 
 systemctl enable zivpn >/dev/null 2>&1
-systemctl start zivpn >/dev/null 2>&1
+systemctl restart zivpn >/dev/null 2>&1
 
 PORT_ZIVPN=$(grep -o '"listen": *"[^"]*"' /etc/zivpn/config.json | cut -d'"' -f4 | sed 's/://g' | sed 's/0.0.0.0//g')
 [ -z "$PORT_ZIVPN" ] && PORT_ZIVPN="5667"
