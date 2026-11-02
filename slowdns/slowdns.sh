@@ -1,118 +1,222 @@
 #!/bin/bash
-# =========================================
-# Quick Setup | SlowDNS Manager (Auto-Mode)
-# =========================================
-# [INFO] Integrasi Otomatis dengan Bot Hokage Legend - V8 PATCH
-# =========================================
+# ==========================================
+#   HOKAGE LEGEND ULTIMATE MENU
+#   Fitur: ZIVPN Monitor & SlowDNS Installer (v8 Patch)
+# ==========================================
 
-BGreen='\e[1;32m'
-BYellow='\e[1;33m'
-BRed='\e[1;31m'
+BIBlack='\033[1;90m'      # Black
+BIRed='\033[1;91m'        # Red
+BIGreen='\033[1;92m'      # Green
+BIYellow='\033[1;93m'     # Yellow
+BIBlue='\033[1;94m'       # Blue
+BIPurple='\033[1;95m'     # Purple
+BICyan='\033[1;96m'       # Cyan
+BIWhite='\033[1;97m'      # White
 NC='\e[0m'
 
-# 1. Bersihkan Konfigurasi Lama & Service Lama
-iptables -t nat -F PREROUTING
-iptables -D INPUT -p udp --dport 5300 -j ACCEPT 2>/dev/null
-iptables -D INPUT -p udp --dport 53 -j ACCEPT 2>/dev/null
-rm -f /root/nsdomain
+export RED='\033[0;31m'
+export GREEN='\033[0;32m'
+export YELLOW='\033[0;33m'
+export BLUE='\033[0;34m'
+export PURPLE='\033[0;35m'
+export CYAN='\033[0;36m'
+export LIGHT='\033[0;37m'
+export NC='\033[0m'
 
-systemctl stop server-sldns client-sldns slowdns 2>/dev/null
-systemctl disable server-sldns client-sldns slowdns 2>/dev/null
-rm -f /etc/systemd/system/server-sldns.service
-rm -f /etc/systemd/system/client-sldns.service
+y='\033[1;33m'
+CYAN="\033[96m"
+z="\033[96m"
+Blue="\033[0;34m"
+green='\033[0;32m'
+grenbo="\e[92;1m"
+purple="\033[1;95m"
+YELL='\033[0;33m'
+white='\033[1;37m'
+G1="\033[1;31m" 
+G2="\033[1;33m" 
 
-# 2. Logika Sinkronisasi Variabel Bot
-if [[ -n "$AUTO_NS" ]]; then
-    NS_DOMAIN=$(echo "$AUTO_NS" | tr -d '[:space:]')
-    echo -e "${BGreen} [BOT MODE] NS Domain Diterima: $NS_DOMAIN ${NC}"
-else
-    echo -e "${BYellow} [!] Warning: Variabel Bot tidak terdeteksi.${NC}"
-    read -rp " Masukkan Subdomain NS: " manual_ns
-    NS_DOMAIN=${manual_ns:-"ns.hokage.web.id"}
-fi
+print_yellow() {
+    echo -e "${y}$1${NC}"
+}
 
-echo "$NS_DOMAIN" > /root/nsdomain
+MYIP=$(curl -sS ipv4.icanhazip.com 2>/dev/null)
+IPVPS=$MYIP
+username=$(cat /usr/bin/user 2>/dev/null || echo "Unknown")
+exp=$(cat /usr/bin/e 2>/dev/null || echo "Unknown")
+certifacate="?" 
+sts="${green}Active${NC}"
 
-# 3. Pengaturan Jaringan (Port 53 Murni)
-iptables -I INPUT -p udp --dport 53 -j ACCEPT
-netfilter-persistent save >/dev/null 2>&1
+# ==========================================
+# SUB-MENU ZIVPN
+# ==========================================
+function menu_zivpn() {
+    CONFIG_FILE="/etc/zivpn/config.json"
+    DB_FILE="/etc/ssh/.ssh.db"
 
-# 4. Instalasi Dependencies
-apt update -y
-apt install -y python3 python3-dnslib net-tools dnsutils curl wget git dos2unix lsof >/dev/null 2>&1
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo -e "${RED}Error: ZiVPN belum terinstall atau config hilang!${NC}"
+        sleep 2
+        return
+    fi
 
-# Mematikan systemd-resolved agar port 53 bebas
-if systemctl is-active --quiet systemd-resolved; then
-    systemctl stop systemd-resolved
-    systemctl disable systemd-resolved
-fi
+    clear
+    print_yellow "════════════════════════════════════════════"
+    echo -e "${GREEN}          ZIVPN USER MANAGEMENT          ${NC}"
+    print_yellow "      ═════════════════════════════      "
+    echo -e " [1] Tambah User ZiVPN"
+    echo -e " [2] Hapus User ZiVPN"
+    echo -e " [3] Edit Password User ZiVPN"
+    echo -e " [4] Lihat Daftar User & Detail (Monitor)"
+    echo -e " [5] Cek Koneksi IP Aktif ZiVPN"
+    echo -e " [6] Sync Semua User SSH ke ZiVPN"
+    echo -e " [x] Kembali ke Menu Utility"
+    print_yellow "════════════════════════════════════════════"
+    read -p " Pilih Menu [1-6 / x] : " option
 
-# 🛡️ FIX: Menghindari VPS kehilangan koneksi DNS (Dikunci Permanen)
-chattr -i /etc/resolv.conf 2>/dev/null
-rm -f /etc/resolv.conf
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-chattr +i /etc/resolv.conf
-
-# 5. Konfigurasi Binary SlowDNS (Patch HC v8.0.10)
-mkdir -p /etc/slowdns
-chmod 777 /etc/slowdns
-
-# Unduh dan ekstrak patch binary terbaru dari github
-wget -q -O /tmp/slowdns.tar.gz "https://raw.githubusercontent.com/hokagelegend9999/slowdns/950005ed93cafcd64a4adebe4fbe5785e26c498b/slowdns-linux-amd64.tar.gz"
-tar -zxvf /tmp/slowdns.tar.gz -C /tmp/ >/dev/null 2>&1
-mv /tmp/dnstt-server /etc/slowdns/slowdns
-chmod +x /etc/slowdns/slowdns
-
-# Generate Key Baru Otomatis
-/etc/slowdns/slowdns -gen-key -privkey-file /etc/slowdns/server.key -pubkey-file /etc/slowdns/server.pub
-PUBKEY=$(cat /etc/slowdns/server.pub)
-
-# 6. Pembuatan Systemd Service (Nama Baru: slowdns.service)
-cat > /etc/systemd/system/slowdns.service << END
-[Unit]
-Description=SlowDNS Server by Hokage Legend
-After=network.target nss-lookup.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/etc/slowdns/slowdns -udp :53 -privkey-file /etc/slowdns/server.key $NS_DOMAIN 127.0.0.1:2269
-Restart=always
-RestartSec=3s
-
-[Install]
-WantedBy=multi-user.target
-END
-
-# 7. Finalisasi
-systemctl daemon-reload
-systemctl enable --now slowdns
-systemctl restart slowdns
+    case $option in
+        1)
+            read -p "Username: " user
+            jq --arg u "$user" '.auth.config += [$u]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            systemctl restart zivpn
+            echo -e "${GREEN}Berhasil menambah user: $user${NC}"
+            sleep 2; menu_zivpn ;;
+        2)
+            read -p "Username: " user
+            jq --arg u "$user" '.auth.config -= [$u]' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            systemctl restart zivpn
+            echo -e "${GREEN}Berhasil menghapus user: $user${NC}"
+            sleep 2; menu_zivpn ;;
+        4)
+            clear
+            echo -e "Daftar User ZiVPN:"
+            jq -r '.auth.config[]' "$CONFIG_FILE" | nl
+            read -p "Tekan enter untuk kembali..."
+            menu_zivpn ;;
+        x) return ;;
+        *) menu_zivpn ;;
+    esac
+}
 
 clear
-# 8. Kirim Notifikasi ke Bot Telegram (SINKRONISASI)
-if [[ -n "$AUTO_CHATID" ]]; then
-    TOKEN="8401742770:AAFs81f2dBEfAIgr9uq2i_96ryclSG95ue8"
-    URL="https://api.telegram.org/bot$TOKEN/sendMessage"
+echo -e " "
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "                  ${y}MENU UTILITY SYSTEM${NC}      "
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "${z}$NC [${white}15${NC}]$grenbo MENU ZIVPN PREMIUM$NC              ${z} $NC [${white}16${NC}]$purple CLEAN CACHE,LOG,RAM$NC"
+echo -e "${z}$NC [${white}19${NC}]$grenbo FIX XRAY CONFIG$NC                 ${z} $NC [${white}20${NC}]$purple MENU SLOWDNS$NC"
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "         ${y}SELECT THE MENU BY TYPING 1/20 THEN ENTER${NC} "
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e "${Blue} $NC${G1}Developer${NC}      ${z}=${NC} HOKAGE LEGEND"
+echo -e "${Blue} $NC${G1}IP ADDRESS${NC}     ${z}=${NC} $IPVPS${NC}"
+print_yellow "══════════════════════════════════════════════════════════"
+echo -e ""
+read -p " PILIH OPSI MENU [ 1-20 atau x] ➤ : " opt
+echo -e ""
+
+case $opt in
+15 | 15) 
+    menu_zivpn 
+    ;;
+20 | 20)
+    clear
+    print_yellow "══════════════════════════════════════════════════"
+    echo -e "               ${CYAN}MENU SLOWDNS PREMIUM${NC}                "
+    print_yellow "══════════════════════════════════════════════════"
+    echo -e " [1]  Install SlowDNS (Offical v8 Patch)"
+    echo -e " [2]  Uninstall SlowDNS"
+    echo -e " [x]  Kembali ke Menu Utility"
+    print_yellow "══════════════════════════════════════════════════"
+    read -p " Pilih Opsi [1-2 atau x]: " sldns_opt
     
-    TEXT="<b>✅ SLOWDNS INSTALLED SUCCESSFULLY</b>%0A"
-    TEXT+="<code>─────────────────────────────</code>%0A"
-    TEXT+="📡 <b>IP VPS      :</b> <code>$(curl -s ifconfig.me)</code>%0A"
-    TEXT+="🌐 <b>NS Domain   :</b> <code>$NS_DOMAIN</code>%0A"
-    TEXT+="🔑 <b>Pub Key     :</b> <code>$PUBKEY</code>%0A"
-    TEXT+="🔌 <b>Target Port :</b> <code>127.0.0.1:2269</code>%0A"
-    TEXT+="📅 <b>Waktu       :</b> <code>$(date +'%Y-%m-%d %H:%M:%S')</code>%0A"
-    TEXT+="<code>─────────────────────────────</code>%0A"
-    TEXT+="🚀 <b>Hokage Legend SlowDNS Service V8</b>"
+    case $sldns_opt in
+        1)
+            clear
+            echo -e "${CYAN}         🚀 INSTALASI SLOWDNS PREMIUM 🚀         ${NC}"
+            echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            
+            # Setup direktori SlowDNS (Sesuai panduan resmi)
+            mkdir -p /root/slowdns[cite: 11]
+            cd /root/slowdns || exit[cite: 11]
 
-    # Tombol Kembali
-    KEYBOARD='{"inline_keyboard": [[{"text": "🔙 KEMBALI KE MENU", "callback_data": "menu"}]]}'
+            # Mengunduh patch binary dan installer 
+            echo -ne "${YELLOW} [⚙] Mengunduh Binary SlowDNS... ${NC}"
+            wget -q -O slowdns-linux-amd64.tar.gz "https://raw.githubusercontent.com/hokagelegend9999/slowdns/main/slowdns-linux-amd64.tar.gz"[cite: 10]
+            tar -zxvf slowdns-linux-amd64.tar.gz >/dev/null 2>&1
+            chmod +x slowdns[cite: 8]
+            echo -e "${GREEN}[OK]${NC}"
 
-    curl -s -X POST "$URL" \
-         -d chat_id="$AUTO_CHATID" \
-         -d text="$TEXT" \
-         -d parse_mode="html" \
-         -d reply_markup="$KEYBOARD" > /dev/null 2>&1
-fi
-sleep 2
+            echo -ne "${YELLOW} [⚙] Mengunduh Installer Resmi... ${NC}"
+            wget -q -O install.sh "https://raw.githubusercontent.com/hokagelegend9999/slowdns/main/install.sh"[cite: 10]
+            chmod +x install.sh
+            echo -e "${GREEN}[OK]${NC}"
+
+            echo -e "\n${YELLOW}Konfigurasi Lingkungan SlowDNS...${NC}"
+            read -p " [?] Masukkan NS Domain Anda: " input_ns
+            export NS_DOMAIN="${input_ns:-ns.hokage.web.id}"[cite: 9]
+            echo "$NS_DOMAIN" > /root/nsdomain[cite: 9]
+
+            # Menulis file slowdns.env agar tidak perlu prompt interaktif (Silent Install)
+            cat > slowdns.env <<EOF
+SLOWDNS_BINARY="slowdns"
+SLOWDNS_UDP_ADDR=":53"
+SLOWDNS_DOMAIN="${NS_DOMAIN}"
+SLOWDNS_UPSTREAM_ADDR="127.0.0.1:22"
+SLOWDNS_PRIVKEY_FILE="/root/slowdns/server.key"
+EOF
+            
+            # Fix Resolv & Port 53 agar bersih 
+            if systemctl is-active --quiet systemd-resolved; then
+                systemctl stop systemd-resolved[cite: 9]
+                systemctl disable systemd-resolved[cite: 9]
+            fi
+            chattr -i /etc/resolv.conf 2>/dev/null[cite: 9]
+            rm -f /etc/resolv.conf[cite: 9]
+            echo "nameserver 8.8.8.8" > /etc/resolv.conf[cite: 9]
+            echo "nameserver 1.1.1.1" >> /etc/resolv.conf[cite: 9]
+            chattr +i /etc/resolv.conf[cite: 9]
+            
+            # Eksekusi installer resmi
+            echo -e "\n${YELLOW} [⚙] Memulai Proses Pemasangan... ${NC}"
+            bash install.sh install[cite: 8]
+
+            echo -e "\n${GREEN} [✔] Instalasi SlowDNS Berhasil Terpasang!${NC}"
+            PUBKEY=$(cat /root/slowdns/server.pub)[cite: 9, 11]
+            echo -e "${CYAN} PUB KEY Anda: ${WHITE}$PUBKEY${NC}"
+            
+            # (Opsional) Kirim Notif Tele jika diperlukan
+            if [[ -n "$AUTO_CHATID" ]]; then[cite: 9]
+                TEXT="<b>✅ SLOWDNS INSTALLED SUCCESSFULLY</b>%0A"[cite: 9]
+                TEXT+="🌐 <b>NS Domain   :</b> <code>$NS_DOMAIN</code>%0A"[cite: 9]
+                TEXT+="🔑 <b>Pub Key     :</b> <code>$PUBKEY</code>%0A"[cite: 9]
+                curl -s -X POST "https://api.telegram.org/bot8401742770:AAFs81f2dBEfAIgr9uq2i_96ryclSG95ue8/sendMessage" \
+                     -d chat_id="$AUTO_CHATID" -d text="$TEXT" -d parse_mode="html" > /dev/null 2>&1[cite: 9]
+            fi
+
+            read -n 1 -s -r -p "Tekan tombol apa saja untuk kembali..."
+            ;;
+        2)
+            clear
+            echo -e "${CYAN}         🗑️  UNINSTALL SLOWDNS PREMIUM 🗑️         ${NC}"
+            
+            cd /root/slowdns || exit[cite: 11]
+            if [ -f "install.sh" ]; then
+                bash install.sh uninstall[cite: 8, 11]
+                echo -e "${GREEN}Service berhasil dihapus.${NC}"[cite: 11]
+            else
+                systemctl stop slowdns.service 2>/dev/null[cite: 11]
+                systemctl disable slowdns.service 2>/dev/null
+                rm -f /etc/systemd/system/slowdns.service
+                systemctl daemon-reload
+                echo -e "${GREEN}Penghapusan manual selesai.${NC}"
+            fi
+
+            read -n 1 -s -r -p "Tekan tombol apa saja untuk kembali..."
+            ;;
+        x) exit 0 ;;
+        *) echo -e "${RED}Pilihan salah!${NC}"; sleep 1 ;;
+    esac
+    ;;
+x) exit 0 ;;
+*) echo -e "Salah input" ;;
+esac
